@@ -2,9 +2,12 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <limine.h>
+#include <stdio.h>
 
 #include "lib/flanterm/src/flanterm.h"
 #include "lib/flanterm/src/flanterm_backends/fb.h"
+
+#define VERSION_STRING MAJORVER "." MINORVER "-" GIT_HASH " (" GIT_BRANCH ")"
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] =
@@ -20,6 +23,13 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_stack_size_request stack_size_request = {
+    .id = LIMINE_STACK_SIZE_REQUEST_ID,
+    .revision = 0,
+    .stack_size = 1048576 // 1 MiB
+};
+
 __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t limine_requests_end_marker[] =
     LIMINE_REQUESTS_END_MARKER;
@@ -28,6 +38,8 @@ static void hcf(void) {
     for (;;) {
     }
 }
+
+struct flanterm_context *flantermctx = NULL;
 
 void kmain(void) {
     if (!LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision)) {
@@ -42,7 +54,7 @@ void kmain(void) {
     struct limine_framebuffer *framebuffer =
         framebuffer_request.response->framebuffers[0];
 
-    struct flanterm_context *ctx = flanterm_fb_init(
+    flantermctx = flanterm_fb_init(
         NULL,
         NULL,
 
@@ -85,13 +97,15 @@ void kmain(void) {
         true  /* autoflush */
     );
 
+    struct flanterm_context *ctx = flantermctx;
+
     if (ctx == NULL) {
         hcf();
     }
 
     flanterm_clear(ctx, true);
 
-    flanterm_write(ctx, "Iridium", 8);
-
+    printf("Iridium %s\n", VERSION_STRING);
+    printf("\x1b[31mThis is red\x1b[0m\n");
     hcf();
 }

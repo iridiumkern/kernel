@@ -1,4 +1,4 @@
-ARCH      ?= aarch64
+ARCH      ?= x86_64
 PLATFORM  ?= generic
 
 CC        := clang
@@ -6,6 +6,10 @@ LD        := ld.lld
 OBJCOPY   := llvm-objcopy
 
 OUTPUT    := iridium
+GIT_HASH := $(shell git rev-parse --short=7 HEAD)
+GIT_BRANCH := $(shell git branch --show-current)
+MAJOR = 1
+MINOR = 0
 
 IMAGE := build/$(ARCH)/$(PLATFORM)/$(OUTPUT).hdd
 
@@ -16,9 +20,14 @@ KERNEL    := $(BUILD)/$(OUTPUT)
 
 LINKER_SCRIPT := $(ARCH_DIR)/linker.lds
 
-CFLAGS    := -g -O0
+CFLAGS    := -g -O2
 CPPFLAGS  :=
 LDFLAGS   :=
+
+CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\"
+CFLAGS += -DGIT_BRANCH=\"$(GIT_BRANCH)\"
+CFLAGS += -DMAJORVER=\"$(MAJOR)\"
+CFLAGS += -DMINORVER=\"$(MINOR)\"
 
 ifeq ($(ARCH),x86_64)
 	TARGET := x86_64-unknown-none-elf
@@ -30,6 +39,7 @@ endif
 
 ifeq ($(ARCH),aarch64)
 	TARGET := aarch64-unknown-none-elf
+	CFLAGS += -mgeneral-regs-only
 endif
 
 CC += -target $(TARGET)
@@ -115,8 +125,8 @@ ifeq ($(ARCH),aarch64)
 	    -smp 1 \
 	    -drive if=pflash,unit=0,format=qcow2,file=/usr/share/edk2/ArmVirtQemu-AARCH64/QEMU_EFI.qcow2,readonly=on \
 	    -device ramfb \
-	    -serial stdio \
-		-hda $(IMAGE) \
+	    -hda $(IMAGE) \
 		-device qemu-xhci \
-		-device usb-kbd
+		-device usb-kbd \
+		-serial stdio
 endif

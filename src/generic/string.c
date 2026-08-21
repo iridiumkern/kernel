@@ -57,3 +57,33 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 
     return 0;
 }
+
+char *strcpy(char *dest, const char *src) {
+    char *ret = dest;
+
+    while ((*dest++ = *src++))
+        ;
+
+    return ret;
+}
+
+char *strcat(char *dest, const char *src) {
+    char *ret = dest;
+
+    while (*dest)
+        dest++;
+
+    while ((*dest++ = *src++))
+        ;
+
+    return ret;
+}
+
+size_t strlen(const char *str) {
+    size_t len = 0;
+
+    while (str[len] != '\0')
+        len++;
+
+    return len;
+}
