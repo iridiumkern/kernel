@@ -37,9 +37,8 @@ ifeq ($(ARCH),x86_64)
 	LDFLAGS += -m elf_x86_64
 endif
 
-ifeq ($(ARCH),aarch64)
-	TARGET := aarch64-unknown-none-elf
-	CFLAGS += -mgeneral-regs-only
+ifeq ($(ARCH),riscv64)
+	TARGET := riscv64-unknown-none-elf
 endif
 
 CC += -target $(TARGET)
@@ -115,18 +114,4 @@ clean:
 qemu:
 ifeq ($(ARCH),x86_64)
 	qemu-system-x86_64 -hda $(IMAGE)
-endif
-
-ifeq ($(ARCH),aarch64)
-	qemu-system-aarch64 \
-	    -M virt \
-	    -cpu cortex-a72 \
-	    -m 512M \
-	    -smp 1 \
-	    -drive if=pflash,unit=0,format=qcow2,file=/usr/share/edk2/ArmVirtQemu-AARCH64/QEMU_EFI.qcow2,readonly=on \
-	    -device ramfb \
-	    -hda $(IMAGE) \
-		-device qemu-xhci \
-		-device usb-kbd \
-		-serial stdio
 endif

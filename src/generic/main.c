@@ -41,6 +41,10 @@ static void hcf(void) {
 
 struct flanterm_context *flantermctx = NULL;
 
+// Sets up hardware
+// This should be on all architectures.
+extern void kinit(void);
+
 void kmain(void) {
     if (!LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision)) {
         hcf();
@@ -106,6 +110,10 @@ void kmain(void) {
     flanterm_clear(ctx, true);
 
     printf("Iridium %s\n", VERSION_STRING);
-    printf("\x1b[31mThis is red\x1b[0m\n");
+    printf("Iridium is brought to you under the GPLv3!\n");
+    printf("For more information please read the LICENSE file shipped with this copy of the OS.\n");
+    
+    kinit();
+
     hcf();
 }
