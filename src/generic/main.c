@@ -35,7 +35,9 @@ static volatile uint64_t limine_requests_end_marker[] =
     LIMINE_REQUESTS_END_MARKER;
 
 static void hcf(void) {
+    printf("hcf(): called\n");
     for (;;) {
+        __asm__ volatile ("hlt");
     }
 }
 
@@ -115,5 +117,6 @@ void kmain(void) {
     
     kinit();
 
+    printf("kinit: returned\n");
     hcf();
 }
