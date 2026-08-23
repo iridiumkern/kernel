@@ -3,6 +3,10 @@
 
 #define IDT_MAX_DESCRIPTORS 255
 
+/**
+ * @brief Defines each entry for the IDT.
+ * 
+ */
 typedef struct {
 	uint16_t    isr_low;      // The lower 16 bits of the ISR's address
 	uint16_t    kernel_cs;    // The GDT segment selector that the CPU will load into CS before calling the ISR
@@ -13,6 +17,10 @@ typedef struct {
 	uint32_t    reserved;     // Set to zero
 } __attribute__((packed)) idt_entry_t;
 
+/**
+ * @brief Given to the CPU as a pointer to the IDT
+ * 
+ */
 typedef struct {
 	uint16_t	limit;
 	uint64_t	base;
@@ -22,6 +30,13 @@ __attribute__((aligned(0x10)))
 static idt_entry_t idt[256]; // Create an array of IDT entries; aligned for performance
 static idtr_t idtr;
 
+/**
+ * @brief Sets an IDT descriptor
+ * 
+ * @param vector The IDT interrupt number (0 is divide by 0 for example)
+ * @param isr The handler to call
+ * @param flags CPU flags (0x8E is for ring 0, 0xEE for ring 3)
+ */
 void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
     idt_entry_t* descriptor = &idt[vector];
 
@@ -38,6 +53,10 @@ static bool vectors[IDT_MAX_DESCRIPTORS];
 
 extern void* isr_stub_table[];
 
+/**
+ * @brief Sets up the IDT
+ * 
+ */
 void idt_init() {
     idtr.base = (uintptr_t)&idt[0];
     idtr.limit = (uint16_t)sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1;

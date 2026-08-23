@@ -3,6 +3,10 @@
 
 extern struct flanterm_context *flantermctx;
 
+/**
+ * @brief Handles exceptions
+ * 
+ */
 __attribute__((noreturn)) void exception_handler() {
     __asm("cli");
     flanterm_clear(flantermctx, true);

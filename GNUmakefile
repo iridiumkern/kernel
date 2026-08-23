@@ -114,5 +114,5 @@ clean:
 
 qemu:
 ifeq ($(ARCH),x86_64)
-	qemu-system-x86_64 -hda $(IMAGE)
+	qemu-system-x86_64 -hda $(IMAGE) -serial stdio
 endif

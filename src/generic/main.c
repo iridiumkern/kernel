@@ -1,9 +1,10 @@
+#include <kernel.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <limine.h>
 #include <stdio.h>
-
+#include <acpi/sdp.h>
 #include "lib/flanterm/src/flanterm.h"
 #include "lib/flanterm/src/flanterm_backends/fb.h"
 
@@ -24,6 +25,12 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
 };
 
 __attribute__((used, section(".limine_requests")))
+static volatile struct limine_hhdm_request hhdm_request = {
+    .id = LIMINE_HHDM_REQUEST_ID,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
 static volatile struct limine_stack_size_request stack_size_request = {
     .id = LIMINE_STACK_SIZE_REQUEST_ID,
     .revision = 0,
@@ -34,6 +41,12 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t limine_requests_end_marker[] =
     LIMINE_REQUESTS_END_MARKER;
 
+kernel_info_t krnl = {0};
+
+/**
+ * @brief Halts the CPU
+ * 
+ */
 static void hcf(void) {
     printf("hcf(): called\n");
     for (;;) {
@@ -46,7 +59,12 @@ struct flanterm_context *flantermctx = NULL;
 // Sets up hardware
 // This should be on all architectures.
 extern void kinit(void);
+extern void print_logo(void);
 
+/**
+ * @brief The entry for the kernel
+ * 
+ */
 void kmain(void) {
     if (!LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision)) {
         hcf();
@@ -111,6 +129,7 @@ void kmain(void) {
 
     flanterm_clear(ctx, true);
 
+    print_logo();
     printf("Iridium %s\n", VERSION_STRING);
     printf("Iridium is brought to you under the GPLv3!\n");
     printf("For more information please read the LICENSE file shipped with this copy of the OS.\n");
@@ -118,5 +137,9 @@ void kmain(void) {
     kinit();
 
     printf("kinit: returned\n");
+
+    krnl.hhdm_offset = hhdm_request.response->offset;
+
+    parse_acpi();
     hcf();
 }
