@@ -10,9 +10,9 @@ void parse_facp(void* facpptr) {
     }
     struct FADT *fadt = facpptr;
 
-    if (krnl.acpi2) {
+    if (fadt->h.Revision == 2) {
         printf("DSDT at: %llx\n", krnl.hhdm_offset + fadt->X_Dsdt);
-    } else {
+    } else if (fadt->h.Revision == 0 || fadt->h.Revision == 1) {
         printf("DSDT at: %llx\n", krnl.hhdm_offset + fadt->Dsdt);
     }
 

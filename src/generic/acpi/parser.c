@@ -89,7 +89,7 @@ acpi_ret parse_acpi(void) {
         kpanic("No RSDP/XSDP!\nPointer of RSDP request: %llx\n", rsdp_request.response);
     }
 
-    // Grab the pointer to the RSDP
+    // Grab the pointer to the RSDP/XSDP
     printf("RSDP pointer: %llx\n", rsdp_request.response->address);
     if (sdp_valid(rsdp_request.response->address) == false) {
         kpanic("SDP corrupted\nSDP reported version: %llx\n", ((struct RSDP_t*)rsdp_request.response->address)->Revision);
@@ -102,6 +102,10 @@ acpi_ret parse_acpi(void) {
         struct RSDP_t *rsdp = rsdp_request.response->address;
         struct RSDT_t *rsdt = (struct RSDT_t*)(uintmax_t)(rsdp->RsdtAddress + krnl.hhdm_offset);
         krnl.acpi2 = false;
+
+        if (!doChecksum(&rsdt->h)) {
+            kpanic("RSDT invalid!\n");
+        }
 
         printf("ACPI 1.0 system, some features may not be supported!\n");
         printf("RSDT at: %llx\n", rsdt);
@@ -124,8 +128,33 @@ acpi_ret parse_acpi(void) {
         madt_parse(madt);
     } else if (((struct RSDP_t*)rsdp_request.response->address)->Revision == 2) {
         // ACPI 2.0 or above
+        struct XSDP_t *xsdp = rsdp_request.response->address;
+        struct XSDT_t *xsdt = (struct XSDT_t*)(uintmax_t)(xsdp->XsdtAddress + krnl.hhdm_offset);
         printf("ACPI 2.0+ system\n");
         krnl.acpi2 = true;
+
+        if (!doChecksum(&xsdt->h)) {
+            kpanic("XSDT invalid!\n");
+        }
+
+        printf("RSDT at: %llx\n", xsdt);
+        printf("OEMID: ");
+        putchar_ft(xsdp->OEMID[0]);
+        putchar_ft(xsdp->OEMID[1]);
+        putchar_ft(xsdp->OEMID[2]);
+        putchar_ft(xsdp->OEMID[3]);
+        putchar_ft(xsdp->OEMID[4]);
+        putchar_ft(xsdp->OEMID[5]);
+        putchar_ft('\n');
+
+        // Find FACP.
+        // No need to check if the facp is null as the parser does for us, if so it panics.
+        void* facp = findEntry("FACP", xsdt);
+        parse_facp(facp);
+
+        // Find (and init) the MADT
+        void* madt = findEntry("APIC", xsdt);
+        madt_parse(madt);
     } else {
         kpanic("ACPI reports as version %llx\nOnly supported versions are 0 and 2.\n", ((struct RSDP_t*)rsdp_request.response->address)->Revision);
     }
