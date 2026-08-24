@@ -1,9 +1,14 @@
+#include <debug.h>
+#include <x86_64/vmm.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <acpi/types.h>
 #include <acpi/madt.h>
 #include <panic.h>
 #include <stdint.h>
+#include <kernel.h>
+
+extern void lapic_init(uint64_t lapic_virtual);
 
 acpi_ret madt_parse(struct madt* madt) {
     if (!madt) {
@@ -33,6 +38,15 @@ acpi_ret madt_parse(struct madt* madt) {
 
             if (lapic->apic_id == bsp_apic_id) {
                 printf("Found BSP lapic, CPU %x!\n", bsp_apic_id);
+                if (madt->lapicaddr == 0) {
+                    kpanic("madt->lapicaddr == 0");
+                } else {
+                    printf("madt->lapicaddr == %llx\n", madt->lapicaddr);
+                }
+                uint64_t page = vmm_find_free_pages(1, true);
+                vmm_map(page, madt->lapicaddr, VMM_P | VMM_RW);
+
+                lapic_init(page);
             }
         } else if (entry->type == MADT_TYPE_ISO) {
             struct madt_iso *iso = (struct madt_iso*)entry;

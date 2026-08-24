@@ -8,6 +8,12 @@
 #include "lib/flanterm/src/flanterm.h"
 #include "lib/flanterm/src/flanterm_backends/fb.h"
 
+#include <pmm.h>
+
+#ifdef __x86_64__
+#include <x86_64/vmm.h>
+#endif
+
 #define VERSION_STRING MAJORVER "." MINORVER "-" GIT_HASH " (" GIT_BRANCH ")"
 
 __attribute__((used, section(".limine_requests")))
@@ -129,6 +135,8 @@ void kmain(void) {
 
     flanterm_clear(ctx, true);
 
+    krnl.hhdm_offset = hhdm_request.response->offset;
+
     print_logo();
     printf("Iridium %s\n", VERSION_STRING);
     printf("Iridium is brought to you under the GPLv3!\n");
@@ -137,8 +145,10 @@ void kmain(void) {
     kinit();
 
     printf("kinit: returned\n");
-
-    krnl.hhdm_offset = hhdm_request.response->offset;
+    pmm_init();
+    #ifdef __x86_64__
+    vmm_init();
+    #endif
 
     parse_acpi();
     hcf();

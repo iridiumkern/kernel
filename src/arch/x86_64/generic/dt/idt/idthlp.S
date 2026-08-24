@@ -1,12 +1,23 @@
 .macro isr_err_stub num
 isr_stub_\num:
+    push \num
+
+    mov rdi, rsp
     call exception_handler
+
+    add rsp, 16
     iretq
 .endm
 
 .macro isr_no_err_stub num
 isr_stub_\num:
+    push 0
+    push \num
+
+    mov rdi, rsp
     call exception_handler
+
+    add rsp, 16
     iretq
 .endm
 
