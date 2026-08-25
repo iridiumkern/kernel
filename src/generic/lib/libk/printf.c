@@ -1,7 +1,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "lib/flanterm/src/flanterm.h"
+#include "../flanterm/src/flanterm.h"
 
 extern struct flanterm_context *flantermctx;
 
