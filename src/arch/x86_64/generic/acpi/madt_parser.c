@@ -1,3 +1,14 @@
+/**
+ * @file madt_parser.c
+ * @author apixeldev
+ * @brief Sets up the MADT (well more accurate to say that it parses it)
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <debug.h>
 #include <x86_64/vmm.h>
 #include <stdio.h>
@@ -12,7 +23,8 @@ extern void lapic_init(uint64_t lapic_virtual);
 
 acpi_ret madt_parse(struct madt* madt) {
     if (!madt) {
-        kpanic("MADT is set to NULL\n");
+        // Used for when a feature and or table or other thing is not there/available
+        return ACPI_MISSING;
     }
 
     uint32_t eax, ebx, ecx, edx;

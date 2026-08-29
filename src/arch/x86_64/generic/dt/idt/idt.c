@@ -1,4 +1,14 @@
-#include <stdio.h>
+/**
+ * @file idt.c
+ * @author apixeldev
+ * @brief Sets up the IDT. Will be updated with time to handle devices and such.
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 

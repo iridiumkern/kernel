@@ -1,3 +1,14 @@
+/**
+ * @file init.c
+ * @author apixeldev
+ * @brief Contains the code to init x86_64 systems
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <stdio.h>
 
 extern int gdt_init(void);

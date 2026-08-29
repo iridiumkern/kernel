@@ -1,3 +1,15 @@
+/**
+ * @file main.c
+ * @author apixeldev
+ * @brief Architecture independent entry point for the kernel
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
+#include <stdlib.h>
 #include <kernel.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -9,6 +21,7 @@
 #include "lib/flanterm/src/flanterm_backends/fb.h"
 
 #include <pmm.h>
+#include <jmp.h>
 
 #ifdef __x86_64__
 #include <x86_64/vmm.h>
@@ -127,13 +140,11 @@ void kmain(void) {
         true  /* autoflush */
     );
 
-    struct flanterm_context *ctx = flantermctx;
-
-    if (ctx == NULL) {
+    if (flantermctx == NULL) {
         hcf();
     }
 
-    flanterm_clear(ctx, true);
+    flanterm_clear(flantermctx, true);
 
     krnl.hhdm_offset = hhdm_request.response->offset;
 
@@ -149,6 +160,21 @@ void kmain(void) {
     #ifdef __x86_64__
     vmm_init();
     #endif
+
+    kheap_init();
+
+    // Test setjmp and longjmp
+    void* ctx = allocjmp();
+    int value = 0;
+
+    value = setjmp(ctx);
+
+    if(value == 0) {
+        longjmp(ctx, 1);
+    } else {
+        printf("CTX WAS SET TO %d\n", value);
+    }
+    kfree(ctx);
 
     parse_acpi();
     hcf();

@@ -1,3 +1,14 @@
+/**
+ * @file vmm.c
+ * @author apixeldev
+ * @brief Simple VMM, not the best but its decent.
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>

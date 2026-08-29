@@ -1,3 +1,14 @@
+/**
+ * @file lapic.c
+ * @author apixeldev
+ * @brief Sets up the lapic and lapic timer (calibrated with the PIT)
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <x86_64/io.h>
 #include <stdio.h>
 #include <stdint.h>

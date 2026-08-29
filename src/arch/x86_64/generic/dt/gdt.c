@@ -1,3 +1,14 @@
+/**
+ * @file gdt.c
+ * @author apixeldev
+ * @brief Sets up the GDT for Ring0 and Ring 3 things. Some Ring1 trickery may be added in the future.
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <stdint.h>
  
 // Each define here is for a specific flag in the descriptor.

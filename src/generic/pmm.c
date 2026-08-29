@@ -1,3 +1,14 @@
+/**
+ * @file pmm.c
+ * @author apixeldev
+ * @brief A simple Physical Memory Manager
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>

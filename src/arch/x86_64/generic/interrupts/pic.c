@@ -1,3 +1,14 @@
+/**
+ * @file pic.c
+ * @author apixeldev
+ * @brief Basically a stub file to disable the PIC
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <stdint.h>
 #include <x86_64/io.h>
 

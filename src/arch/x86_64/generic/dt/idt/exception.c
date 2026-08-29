@@ -1,3 +1,14 @@
+/**
+ * @file exception.c
+ * @author apixeldev
+ * @brief Handles exceptions for page faults and the like.
+ * @version 0.1
+ * @date 2026-08-29
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <stdio.h>
 #include "../../src/generic/lib/flanterm/src/flanterm.h"
 
