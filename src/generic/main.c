@@ -24,7 +24,6 @@
 #include <jmp.h>
 #include <panic.h>
 #include <sec/hashes.h>
-#include <sec/csprng.h>
 #include <debug.h>
 
 #ifdef __x86_64__
@@ -159,7 +158,6 @@ void kmain(void) {
     printf("For more information please read the LICENSE file shipped with this copy of the OS.\n");
     
     kinit();
-    csprng_init();
     sspsetup();
 
     printf("kinit: returned\n");
