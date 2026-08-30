@@ -22,6 +22,7 @@
 
 #include <pmm.h>
 #include <jmp.h>
+#include <panic.h>
 
 #ifdef __x86_64__
 #include <x86_64/vmm.h>
@@ -177,5 +178,6 @@ void kmain(void) {
     kfree(ctx);
 
     parse_acpi();
+
     hcf();
 }

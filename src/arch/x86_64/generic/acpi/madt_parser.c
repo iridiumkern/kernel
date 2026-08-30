@@ -20,6 +20,8 @@
 #include <kernel.h>
 
 extern void lapic_init(uint64_t lapic_virtual);
+extern void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base, uint8_t bsp_lapic_id);
+extern void ioapic_register_iso(uint8_t source, uint32_t gsi);
 
 acpi_ret madt_parse(struct madt* madt) {
     if (!madt) {
@@ -49,11 +51,8 @@ acpi_ret madt_parse(struct madt* madt) {
             struct madt_local_apic *lapic = (struct madt_local_apic *)entry;
 
             if (lapic->apic_id == bsp_apic_id) {
-                printf("Found BSP lapic, CPU %x!\n", bsp_apic_id);
                 if (madt->lapicaddr == 0) {
                     kpanic("madt->lapicaddr == 0");
-                } else {
-                    printf("madt->lapicaddr == %llx\n", madt->lapicaddr);
                 }
                 uint64_t page = vmm_find_free_pages(1, true);
                 vmm_map(page, madt->lapicaddr, VMM_P | VMM_RW);
@@ -67,6 +66,17 @@ acpi_ret madt_parse(struct madt* madt) {
             printf("\tSource: %x\n", iso->source);
             printf("\tGSI: %lx\n", iso->gsi);
             printf("\tflags: %x\n", iso->flags);
+            ioapic_register_iso(iso->source, iso->gsi);
+        } else if (entry->type == MADT_TYPE_IO_APIC) {
+            struct madt_io_apic *ioapic = (struct madt_io_apic*)entry;
+            printf("IOAPIC Info Dump:\n");
+            printf("\tID = %x\n", ioapic->id);
+            printf("\tADDR = %lx\n", ioapic->address);
+            printf("\tGSI = %lx\n", ioapic->gsi_base);
+
+            uint64_t page = vmm_find_free_pages(1, true);
+            vmm_map(page, ioapic->address, VMM_P | VMM_RW);
+            ioapic_init(page, ioapic->gsi_base, bsp_apic_id);
         }
 
         // Find the next entry

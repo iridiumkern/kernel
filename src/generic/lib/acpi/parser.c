@@ -121,6 +121,10 @@ acpi_ret parse_acpi(void) {
         // Find FACP.
         // No need to check if the facp is null as the parser does for us, if so it panics.
         void* facp = findEntry("FACP", rsdt);
+        if (!facp) {
+            // FACP should be present, if not either the kernel is broken or something else isnt working
+            kpanic("FACP is missing or equal to NULL!\n");
+        }
         parse_facp(facp);
 
         // Find (and init) the MADT
@@ -150,6 +154,10 @@ acpi_ret parse_acpi(void) {
         // Find FACP.
         // No need to check if the facp is null as the parser does for us, if so it panics.
         void* facp = findEntry("FACP", xsdt);
+        if (!facp) {
+            // FACP should be present, if not either the kernel is broken or something else isnt working
+            kpanic("FACP is missing or equal to NULL!\n");
+        }
         parse_facp(facp);
 
         // Find (and init) the MADT
