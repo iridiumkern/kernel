@@ -23,6 +23,9 @@
 #include <pmm.h>
 #include <jmp.h>
 #include <panic.h>
+#include <sec/hashes.h>
+#include <sec/csprng.h>
+#include <debug.h>
 
 #ifdef __x86_64__
 #include <x86_64/vmm.h>
@@ -156,6 +159,7 @@ void kmain(void) {
     printf("For more information please read the LICENSE file shipped with this copy of the OS.\n");
     
     kinit();
+    csprng_init();
     sspsetup();
 
     printf("kinit: returned\n");
@@ -180,6 +184,12 @@ void kmain(void) {
     kfree(ctx);
 
     parse_acpi();
+
+    unsigned char out[64];
+    void* input = kmalloc(512);
+
+    crypto_hash_sha512(out, input, 512);
+    hexdump(out, 64);
 
     hcf();
 }

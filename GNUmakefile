@@ -50,7 +50,6 @@ override CFLAGS += \
 	-Werror \
 	-std=c99 \
 	-ffreestanding \
-	-fno-stack-protector \
 	-fno-stack-check \
 	-fno-lto \
 	-fno-PIC \
