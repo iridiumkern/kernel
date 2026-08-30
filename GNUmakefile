@@ -32,7 +32,7 @@ CFLAGS += -DMINORVER=\"$(MINOR)\"
 ifeq ($(ARCH),x86_64)
 	TARGET := x86_64-unknown-none-elf
 	CFLAGS += -m64 -march=x86-64 -mabi=sysv \
-			  -mno-80387 -mno-mmx -mno-sse -mno-sse2 \
+			  -mno-mmx \
 			  -mno-red-zone -mcmodel=kernel \
 			  -masm=intel
 	LDFLAGS += -m elf_x86_64
@@ -55,7 +55,8 @@ override CFLAGS += \
 	-fno-lto \
 	-fno-PIC \
 	-ffunction-sections \
-	-fdata-sections
+	-fdata-sections \
+	-fstack-protector-all
 
 override CPPFLAGS := \
 	-I$(SRC_DIR)/inc \

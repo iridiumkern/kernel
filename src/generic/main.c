@@ -80,6 +80,7 @@ struct flanterm_context *flantermctx = NULL;
 // This should be on all architectures.
 extern void kinit(void);
 extern void print_logo(void);
+extern void sspsetup(void);
 
 /**
  * @brief The entry for the kernel
@@ -155,6 +156,7 @@ void kmain(void) {
     printf("For more information please read the LICENSE file shipped with this copy of the OS.\n");
     
     kinit();
+    sspsetup();
 
     printf("kinit: returned\n");
     pmm_init();

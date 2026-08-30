@@ -48,7 +48,7 @@ static const char* decode_exception(uint64_t exception) {
         case 11: return "SEGNP"; // Segment not present
         case 12: return "SSF"; // Stack Segment Fault
         case 13: return "GPF"; // General Protection fault
-        case 14: return "PF"; // Page Fault
+        case 14: return "PGF"; // Page Fault
         case 16: return "FPE"; // Floating Point Exception
         case 17: return "ALGCHK"; // Alignment Check
         case 18: return "MACHK"; // Machine Check
