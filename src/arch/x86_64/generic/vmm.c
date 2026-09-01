@@ -299,6 +299,13 @@ uint64_t vmm_find_free_pages(uint64_t pages, bool user) {
     return 0;
 }
 
+bool vmm_is_page_mapped(uint64_t virt) {
+    if (virt & (PAGE_SIZE - 1))
+        return false;
+
+    return vmm_get_phys(virt) != 0;
+}
+
 void vmm_init(void) {
     uint64_t cr3 = read_cr3();
 

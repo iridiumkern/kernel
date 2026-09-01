@@ -8,6 +8,7 @@ Public domain.
 // This has been slightly modified for indentation and such
 
 #include <sec/hashes.h>
+#include <string.h>
 #include <stdint.h>
 
 #define blocks crypto_hashblocks_sha512
@@ -246,49 +247,58 @@ int crypto_hashblocks_sha512(unsigned char *statebytes,const unsigned char *in,u
 	return 0;
 }
 
-int crypto_hash_sha512(unsigned char *out,const unsigned char *in,unsigned long long inlen) {
+__attribute__((optnone)) int crypto_hash_sha512(unsigned char *out,const unsigned char *in,unsigned long long inlen) {
 	unsigned char h[64];
 	unsigned char padded[256];
 	unsigned int i;
 	unsigned long long bytes = inlen;
 
-	for (i = 0;i < 64;++i) h[i] = iv[i];
+	for (i = 0;i < 64;++i) {
+		unsigned char x = iv[i];
+		h[i] = x;
+	}
 
 	blocks(h,in,inlen);
 	in += inlen;
 	inlen &= 127;
 	in -= inlen;
-
-	for (i = 0; i < inlen;++i) padded[i] = in[i];
+	for (i = 0; i < inlen;++i) {
+		padded[i] = in[i];
+	}
 	padded[inlen] = 0x80;
 
 	if (inlen < 112) {
-	for (i = inlen + 1;i < 119;++i) padded[i] = 0;
-	padded[119] = bytes >> 61;
-	padded[120] = bytes >> 53;
-	padded[121] = bytes >> 45;
-	padded[122] = bytes >> 37;
-	padded[123] = bytes >> 29;
-	padded[124] = bytes >> 21;
-	padded[125] = bytes >> 13;
-	padded[126] = bytes >> 5;
-	padded[127] = bytes << 3;
-	blocks(h,padded,128);
+		for (i = inlen + 1;i < 119;++i) {
+			padded[i] = 0;
+		}
+
+		padded[119] = bytes >> 61;
+		padded[120] = bytes >> 53;
+		padded[121] = bytes >> 45;
+		padded[122] = bytes >> 37;
+		padded[123] = bytes >> 29;
+		padded[124] = bytes >> 21;
+		padded[125] = bytes >> 13;
+		padded[126] = bytes >> 5;
+		padded[127] = bytes << 3;
+		blocks(h,padded,128);
 	} else {
-	for (i = inlen + 1;i < 247;++i) padded[i] = 0;
-	padded[247] = bytes >> 61;
-	padded[248] = bytes >> 53;
-	padded[249] = bytes >> 45;
-	padded[250] = bytes >> 37;
-	padded[251] = bytes >> 29;
-	padded[252] = bytes >> 21;
-	padded[253] = bytes >> 13;
-	padded[254] = bytes >> 5;
-	padded[255] = bytes << 3;
-	blocks(h,padded,256);
+		for (i = inlen + 1;i < 247;++i) {
+			padded[i] = 0;
+		}
+
+		padded[247] = bytes >> 61;
+		padded[248] = bytes >> 53;
+		padded[249] = bytes >> 45;
+		padded[250] = bytes >> 37;
+		padded[251] = bytes >> 29;
+		padded[252] = bytes >> 21;
+		padded[253] = bytes >> 13;
+		padded[254] = bytes >> 5;
+		padded[255] = bytes << 3;
+		blocks(h,padded,256);
 	}
 
-	for (i = 0;i < 64;++i) out[i] = h[i];
-
+	memcpy(out,h,64);
 	return 0;
 }

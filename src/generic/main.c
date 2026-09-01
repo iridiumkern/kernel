@@ -9,21 +9,21 @@
  * 
  */
 
+#include "lib/flanterm/src/flanterm_backends/fb.h"
+#include <acpi/sdp.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <kernel.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
 #include <limine.h>
 #include <stdio.h>
-#include <acpi/sdp.h>
-#include "lib/flanterm/src/flanterm.h"
-#include "lib/flanterm/src/flanterm_backends/fb.h"
 
+#include <sec/hashes.h>
+#include <sec/random.h>
+#include <panic.h>
 #include <pmm.h>
 #include <jmp.h>
-#include <panic.h>
-#include <sec/hashes.h>
 #include <debug.h>
 
 #ifdef __x86_64__
@@ -158,35 +158,24 @@ void kmain(void) {
     printf("For more information please read the LICENSE file shipped with this copy of the OS.\n");
     
     kinit();
-    sspsetup();
-
-    printf("kinit: returned\n");
     pmm_init();
     #ifdef __x86_64__
     vmm_init();
     #endif
 
     kheap_init();
-
-    // Test setjmp and longjmp
-    void* ctx = allocjmp();
-    int value = 0;
-
-    value = setjmp(ctx);
-
-    if(value == 0) {
-        longjmp(ctx, 1);
-    } else {
-        printf("CTX WAS SET TO %d\n", value);
+    
+    if (!csprng_init()) {
+        kpanic("CSPRNG_INIT FAILED!\n");
     }
-    kfree(ctx);
+    sspsetup();
 
     parse_acpi();
 
     unsigned char out[64];
-    void* input = kmalloc(512);
-
-    crypto_hash_sha512(out, input, 512);
+    if (!csprng_getrand(out)) {
+        kpanic("CSPRNG_GETRAND RETURNED FALSE!");
+    }
     hexdump(out, 64);
 
     hcf();
