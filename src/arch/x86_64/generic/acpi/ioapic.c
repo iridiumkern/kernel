@@ -1,3 +1,4 @@
+#include <x86_64/io.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -89,7 +90,15 @@ void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lap
     }
 
     // Maps in the PS/2 keyboard
-    //ioapic_route_gsi(ioapic_get_gsi(1), 0x21, bsp_lapic_id);
+    outb(0x64, 0xAA);
 
+    while (!(inb(0x64) & 1));
+
+    uint8_t result = inb(0x60);
+
+    if (result == 0x55) {
+        // 8042 exists
+        ioapic_route_gsi(ioapic_get_gsi(1), 0x21, bsp_lapic_id);
+    }
     (void)gsi_base;
 }

@@ -64,6 +64,7 @@ static bool vectors[IDT_MAX_DESCRIPTORS];
 
 extern void* isr_stub_table[];
 extern void lapic_timer_stub(void);
+extern void ps2_kbd_stub(void);
 
 /**
  * @brief Sets up the IDT
@@ -79,6 +80,7 @@ void idt_init(void) {
     }
 
     idt_set_descriptor(0x20, (void *)lapic_timer_stub, 0x8E);
+    idt_set_descriptor(0x21, ps2_kbd_stub, 0x8E);
 
     __asm__ volatile ("lidt %0" : : "m"(idtr));
     __asm__ volatile ("sti");

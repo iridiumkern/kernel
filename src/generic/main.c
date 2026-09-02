@@ -11,20 +11,14 @@
 
 #include "lib/flanterm/src/flanterm_backends/fb.h"
 #include <acpi/sdp.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <kernel.h>
-#include <stdint.h>
-#include <stddef.h>
 #include <limine.h>
 #include <stdio.h>
 
-#include <sec/hashes.h>
 #include <sec/random.h>
 #include <panic.h>
 #include <pmm.h>
-#include <jmp.h>
-#include <debug.h>
 
 #ifdef __x86_64__
 #include <x86_64/vmm.h>
@@ -171,12 +165,5 @@ void kmain(void) {
     sspsetup();
 
     parse_acpi();
-
-    unsigned char out[64];
-    if (!csprng_getrand(out)) {
-        kpanic("CSPRNG_GETRAND RETURNED FALSE!");
-    }
-    hexdump(out, 64);
-
     hcf();
 }
