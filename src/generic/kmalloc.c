@@ -37,21 +37,17 @@ static heap_block_t *heap_head = NULL;
 static uint64_t heap_start = 0;
 static uint64_t heap_end = 0;
 
-
 /*
  * Align an allocation upward.
  */
-static size_t align_up(size_t value)
-{
+static size_t align_up(size_t value) {
     return (value + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
 }
-
 
 /*
  * Find a free block using first-fit.
  */
-static heap_block_t *find_free_block(size_t size)
-{
+static heap_block_t *find_free_block(size_t size) {
     heap_block_t *block = heap_head;
 
     while (block) {
@@ -64,12 +60,10 @@ static heap_block_t *find_free_block(size_t size)
     return NULL;
 }
 
-
 /*
  * Split a block if enough space remains for another block.
  */
-static void split_block(heap_block_t *block, size_t size)
-{
+static void split_block(heap_block_t *block, size_t size) {
     /*
      * Don't create useless tiny fragments.
      */
@@ -94,12 +88,10 @@ static void split_block(heap_block_t *block, size_t size)
     block->size = size;
 }
 
-
 /*
  * Merge block with the next block.
  */
-static void merge_next(heap_block_t *block)
-{
+static void merge_next(heap_block_t *block) {
     heap_block_t *next = block->next;
 
     if (!next || !next->free)
@@ -112,12 +104,10 @@ static void merge_next(heap_block_t *block)
         block->next->prev = block;
 }
 
-
 /*
  * Grow the heap by allocating and mapping more physical pages.
  */
-static bool heap_grow(size_t required)
-{
+static bool heap_grow(size_t required) {
     size_t pages = (required + VMM_PAGE_SIZE - 1) / VMM_PAGE_SIZE;
 
     if (pages < KHEAP_GROW_PAGES)
@@ -175,9 +165,7 @@ static bool heap_grow(size_t required)
     return true;
 }
 
-
-void kheap_init(void)
-{
+void kheap_init(void) {
     heap_head = NULL;
     heap_start = 0;
     heap_end = 0;
@@ -189,9 +177,7 @@ void kheap_init(void)
      */
 }
 
-
-void *kmalloc(size_t size)
-{
+void *kmalloc(size_t size) {
     if (size == 0)
         return NULL;
 
@@ -219,9 +205,7 @@ void *kmalloc(size_t size)
     return (void *)(block + 1);
 }
 
-
-void kfree(void *ptr)
-{
+void kfree(void *ptr) {
     if (!ptr)
         return;
 

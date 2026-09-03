@@ -23,6 +23,12 @@ extern void lapic_init(uint64_t lapic_virtual);
 extern void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base, uint8_t bsp_lapic_id);
 extern void ioapic_register_iso(uint8_t source, uint32_t gsi);
 
+/**
+ * @brief Parses the MADT
+ * 
+ * @param madt The pointer to the MADT
+ * @return acpi_ret The state of the madt parser
+ */
 acpi_ret madt_parse(struct madt* madt) {
     if (!madt) {
         // Used for when a feature and or table or other thing is not there/available
@@ -42,38 +48,37 @@ acpi_ret madt_parse(struct madt* madt) {
     // Find the first MADT entry
     struct madt_entry *entry = madt_next(madt, NULL);
 
+    // Parses all entries that the madt parser can find
     while (entry != NULL) {
+        // If a MADT entry is corrupt we panic
+        // Since if this basic ACPI table is corrupted it is very possible that other tables are broken
         if (!madt_entry_valid(madt, entry)) {
             kpanic("MADT entry is invalid!\n");
         }
 
+        // Sets up an LAPIC
         if (entry->type == MADT_TYPE_LOCAL_APIC) {
             struct madt_local_apic *lapic = (struct madt_local_apic *)entry;
 
+            // Sets up the BSP lapic
             if (lapic->apic_id == bsp_apic_id) {
                 if (madt->lapicaddr == 0) {
                     kpanic("madt->lapicaddr == 0");
                 }
+                // Map the lapic address
                 uint64_t page = vmm_find_free_pages(1, true);
                 vmm_map(page, madt->lapicaddr, VMM_P | VMM_RW);
 
                 lapic_init(page);
             }
         } else if (entry->type == MADT_TYPE_ISO) {
+            // Registers an ISO
             struct madt_iso *iso = (struct madt_iso*)entry;
-            printf("ISO Info Dump:\n");
-            printf("\tBus: %x\n", iso->bus);
-            printf("\tSource: %x\n", iso->source);
-            printf("\tGSI: %lx\n", iso->gsi);
-            printf("\tflags: %x\n", iso->flags);
             ioapic_register_iso(iso->source, iso->gsi);
         } else if (entry->type == MADT_TYPE_IO_APIC) {
             struct madt_io_apic *ioapic = (struct madt_io_apic*)entry;
-            printf("IOAPIC Info Dump:\n");
-            printf("\tID = %x\n", ioapic->id);
-            printf("\tADDR = %lx\n", ioapic->address);
-            printf("\tGSI = %lx\n", ioapic->gsi_base);
-
+            
+            // Maps the IOAPIC and sets it up
             uint64_t page = vmm_find_free_pages(1, true);
             vmm_map(page, ioapic->address, VMM_P | VMM_RW);
             ioapic_init(page, ioapic->gsi_base, bsp_apic_id);

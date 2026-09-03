@@ -22,7 +22,7 @@ bool vmm_map(uint64_t virt, uint64_t phys, uint64_t flags);
 bool vmm_unmap(uint64_t virt);
 uint64_t vmm_get_phys(uint64_t virt);
 void vmm_map_pages(uint64_t virt, uint64_t phys, uint64_t pages, uint64_t flags);
-void vmm_free_pages(uint64_t virt, uint64_t pages);
+bool vmm_free_pages(uint64_t virt, uint64_t pages);
 bool vmm_is_page_mapped(uint64_t virt);
 void vmm_init(void);
 

@@ -65,10 +65,22 @@ static const unsigned char iv[64] = {
 	0x5b,0xe0,0xcd,0x19,0x13,0x7e,0x21,0x79
 } ;
 
+/**
+ * @brief Loads a big endian number
+ * 
+ * @param x A number
+ * @return uint64_t Big Endian
+ */
 static uint64_t load_bigendian(const unsigned char *x) {
 	return (uint64_t) (x[7]) | (((uint64_t) (x[6])) << 8) | (((uint64_t) (x[5])) << 16) | (((uint64_t) (x[4])) << 24) | (((uint64_t) (x[3])) << 32) | (((uint64_t) (x[2])) << 40) | (((uint64_t) (x[1])) << 48) | (((uint64_t) (x[0])) << 56);
 }
 
+/**
+ * @brief Stores a number as big endian
+ * 
+ * @param x The buffer
+ * @param u The number
+ */
 static void store_bigendian(unsigned char *x,uint64_t u) {
 	x[7] = u; u >>= 8;
 	x[6] = u; u >>= 8;
@@ -247,6 +259,14 @@ int crypto_hashblocks_sha512(unsigned char *statebytes,const unsigned char *in,u
 	return 0;
 }
 
+/**
+ * @brief SHA512
+ * 
+ * @param out The output buffer (must be 64bytes large)
+ * @param in The input
+ * @param inlen The input length
+ * @return int Did it work or not
+ */
 __attribute__((optnone)) int crypto_hash_sha512(unsigned char *out,const unsigned char *in,unsigned long long inlen) {
 	unsigned char h[64];
 	unsigned char padded[256];

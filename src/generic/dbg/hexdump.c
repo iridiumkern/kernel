@@ -13,6 +13,12 @@
 #include <stddef.h>
 #include <stdio.h>
 
+/**
+ * @brief XXD like formatted output
+ * 
+ * @param data The data being dumped
+ * @param len The length of the data being dumped
+ */
 void hexdump(const void *data, size_t len) {
     const uint8_t *p = (const uint8_t *)data;
 

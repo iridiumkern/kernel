@@ -10,6 +10,12 @@
 static uint64_t state[8] = {0};
 static bool init = false;
 
+/**
+ * @brief Sets up the CSPRNG
+ * 
+ * @return true init worked
+ * @return false init did not work and the CSPRNG failed to init
+ */
 bool csprng_init(void) {
     if (init) return false;
     // Just in case some attacker messes with BSS for example
@@ -30,6 +36,14 @@ bool csprng_init(void) {
     return true;
 }
 
+/**
+ * @brief Adds entropy to the CSPRNG
+ * 
+ * @param data The data
+ * @param size Size of the data
+ * @return true Data was added
+ * @return false Data was not added
+ */
 bool csprng_addentropy(void* data, uint64_t size) {
     if (!init) return false;
     if (!range_is_mapped((uintptr_t)data, size)) return false;
@@ -45,13 +59,19 @@ bool csprng_addentropy(void* data, uint64_t size) {
     return true;
 }
 
-// Data must be 64 bytes
-bool csprng_getrand(uint8_t *data) {
+/**
+ * @brief Gets a random cryptographically secure number
+ * 
+ * @param out The output, must be 64 bytes large.
+ * @return true Number was generated
+ * @return false Number was not generated
+ */
+bool csprng_getrand(uint8_t *out) {
     uint64_t output[8];
     uint64_t newstate[8];
 
     if (!init) return false;
-    if (!range_is_mapped((uintptr_t)data, 64)) return false;
+    if (!range_is_mapped((uintptr_t)out, 64)) return false;
     
     if (crypto_hash_sha512((void*)&output, (void*)&state, 64) != 0) {
         memset(&output, 0, 64);
@@ -65,9 +85,14 @@ bool csprng_getrand(uint8_t *data) {
         return false;
     }
 
+    // Add some extra entropy
+    uint64_t tmpbuf;
+    random_u64(&tmpbuf);
+    csprng_addentropy(&tmpbuf, 8);
+
     memcpy(state, newstate, 64);
 
-    memcpy(data, output, 64);
+    memcpy(out, output, 64);
 
     memset(output, 0, 64);
     memset(newstate, 0, 64);

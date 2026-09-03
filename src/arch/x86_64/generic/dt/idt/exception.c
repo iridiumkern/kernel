@@ -14,6 +14,10 @@
 
 extern struct flanterm_context *flantermctx;
 
+/**
+ * @brief The interrupt frame
+ * 
+ */
 struct interrupt_frame {
     uint64_t exception_code;
     uint64_t errorcode;
@@ -26,6 +30,11 @@ struct interrupt_frame {
     uint64_t ss;
 };
 
+/**
+ * @brief Reads the CR2 register
+ * 
+ * @return uint64_t The faulting address that causes the page fault
+ */
 static inline uint64_t read_cr2(void) {
     uint64_t value;
     __asm__ volatile ("mov %0, cr2" : "=r"(value));

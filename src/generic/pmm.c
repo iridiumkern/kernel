@@ -50,6 +50,10 @@ static inline void pmm_clear_range(uint64_t base, uint64_t length) {
         pmm_clear(page);
 }
 
+/**
+ * @brief Sets up the PMM
+ * 
+ */
 void pmm_init(void) {
     if (!memmap.response)
         kpanic("PMM: memory map is NULL\n");
@@ -80,6 +84,11 @@ void pmm_init(void) {
     printf("PMM: initialized\n");
 }
 
+/**
+ * @brief Allocates one page
+ * 
+ * @return uint64_t Physical page addr
+ */
 uint64_t pmm_alloc(void) {
     for (uint64_t page = 0; page < MAX_PAGES; page++) {
         if (!pmm_test(page)) {
@@ -91,6 +100,11 @@ uint64_t pmm_alloc(void) {
     return 0;
 }
 
+/**
+ * @brief Frees a page in the bitmap
+ * 
+ * @param address The page to free
+ */
 void pmm_free(uint64_t address) {
     if (address & (PAGE_SIZE - 1))
         kpanic("PMM: attempted to free unaligned physical address\n");
@@ -106,6 +120,12 @@ void pmm_free(uint64_t address) {
     pmm_clear(page);
 }
 
+/**
+ * @brief ALlocates multiple phys pages
+ * 
+ * @param pages Count of pages
+ * @return uint64_t The (base) physical page
+ */
 uint64_t pmm_alloc_pages(uint64_t pages) {
     if (pages == 0)
         return 0;
@@ -134,6 +154,12 @@ uint64_t pmm_alloc_pages(uint64_t pages) {
     return 0;
 }
 
+/**
+ * @brief Frees multiple physical pages
+ * 
+ * @param address The (base) phys addr
+ * @param pages The amount of pages to free
+ */
 void pmm_free_pages(uint64_t address, uint64_t pages) {
     if (pages == 0)
         return;

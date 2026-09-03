@@ -5,14 +5,18 @@
 #include <x86_64/vmm.h>
 #endif
 
-//static inline uint64_t align_up(uint64_t addr, uint64_t alignment) {
-//    return (addr + alignment - 1) & ~(alignment - 1);
-//}
-
 static inline uint64_t align_down(uint64_t addr, uint64_t alignment) {
     return addr & ~(alignment - 1);
 }
 
+/**
+ * @brief Checks if a memory range is mapped
+ * 
+ * @param start The start of the range
+ * @param size The size of the range
+ * @return true Mapped
+ * @return false Unmapped
+ */
 bool range_is_mapped(uintptr_t start, uintptr_t size) {
     #ifdef __x86_64__
     if (size == 0)

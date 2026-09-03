@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <cpuid.h>
 
+/**
+ * @brief Reads the TSC
+ * 
+ * @return uint64_t The current TSC
+ */
 static inline uint64_t rdtsc(void) {
     uint32_t lo, hi;
 
@@ -14,6 +19,13 @@ static inline uint64_t rdtsc(void) {
     return ((uint64_t)hi << 32) | lo;
 }
 
+/**
+ * @brief Calls the CPU for a random secure number
+ * 
+ * @param out The random number
+ * @return true The number is valid/rdrand worked
+ * @return false The call to rdrand failed for some reason
+ */
 static inline bool rdrand64(uint64_t *out) {
     unsigned char ok;
 
@@ -28,6 +40,13 @@ static inline bool rdrand64(uint64_t *out) {
     return ok;
 }
 
+/**
+ * @brief Gets entropy, consider semi-secure though not cryptographic
+ * 
+ * @param out The random value
+ * @return true Call worked
+ * @return false Call failed
+ */
 bool random_u64(uint64_t *out) {
     uint64_t jitter1 = rdtsc();
 

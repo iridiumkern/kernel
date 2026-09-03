@@ -14,6 +14,11 @@
 
 #define PORT 0x3f8          // COM1
 
+/**
+ * @brief Sets up the serial port
+ * 
+ * @return int 1 if it fails, 0 if it works
+ */
 int init_serial() {
    outb(PORT + 1, 0x00);    // Disable all interrupts
    outb(PORT + 3, 0x80);    // Enable DLAB (set baud rate divisor)
@@ -36,10 +41,20 @@ int init_serial() {
    return 0;
 }
 
+/**
+ * @brief Checks if the serial port transmit is empty
+ * 
+ * @return int empty or not (1 is empty or true)
+ */
 int is_transmit_empty() {
    return inb(PORT + 5) & 0x20;
 }
 
+/**
+ * @brief Writes a character to the serial port
+ * 
+ * @param a Character to write
+ */
 void write_serial(char a) {
    while (is_transmit_empty() == 0);
 

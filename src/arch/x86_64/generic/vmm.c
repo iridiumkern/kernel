@@ -29,6 +29,11 @@
 #define VMM_KERNEL_START 0xFFFF800100000000ULL
 #define VMM_KERNEL_END   0xFFFFFFFFFFFFF000ULL
 
+/**
+ * @brief Reads the CR3
+ * 
+ * @return uint64_t CR3 phys addr
+ */
 uint64_t read_cr3(void) {
     uint64_t cr3;
 
@@ -40,6 +45,11 @@ uint64_t read_cr3(void) {
     return cr3;
 }
 
+/**
+ * @brief Writes a new CR3
+ * 
+ * @param cr3 The CR3 to write
+ */
 void write_cr3(uint64_t cr3) {
     __asm__ volatile (
         "mov cr3, %0"
@@ -49,10 +59,21 @@ void write_cr3(uint64_t cr3) {
     );
 }
 
+/**
+ * @brief Uses HHDM to turn a physical address into a virtual one (not suitable for general use)
+ * 
+ * @param phys The phys addr
+ * @return uint64_t* R/W pointer to said memory
+ */
 static inline uint64_t *phys_to_virt(uint64_t phys) {
     return (uint64_t *)(uintptr_t)(phys + krnl.hhdm_offset);
 }
 
+/**
+ * @brief Allocates a new table for the VMM
+ * 
+ * @return uint64_t The physical address
+ */
 static uint64_t vmm_alloc_table(void) {
     uint64_t phys = pmm_alloc();
 
@@ -67,22 +88,55 @@ static uint64_t vmm_alloc_table(void) {
     return phys;
 }
 
+/**
+ * @brief Grabs the PML4 index of a pointer
+ * 
+ * @param virt The memory address
+ * @return uint64_t The PML4 index
+ */
 static inline uint64_t pml4_index(uint64_t virt) {
     return (virt >> 39) & 0x1FF;
 }
 
+/**
+ * @brief Grabs the PDPT index of a page
+ * 
+ * @param virt The page
+ * @return uint64_t The index
+ */
 static inline uint64_t pdpt_index(uint64_t virt) {
     return (virt >> 30) & 0x1FF;
 }
 
+/**
+ * @brief Grabs the PD index
+ * 
+ * @param virt The virtual address
+ * @return uint64_t The PD table
+ */
 static inline uint64_t pd_index(uint64_t virt) {
     return (virt >> 21) & 0x1FF;
 }
 
+/**
+ * @brief Grabs the PT index
+ * 
+ * @param virt The virtual address
+ * @return uint64_t The PT index
+ */
 static inline uint64_t pt_index(uint64_t virt) {
     return (virt >> 12) & 0x1FF;
 }
 
+/**
+ * @brief Maps a page
+ * 
+ * @param virt The virtual page that is being mapped onto
+ * @param phys The physical memory referenced by the page
+ * @param flags The flags for the MMU
+ * @return true it worked
+ * @return false it failed
+ */
 bool vmm_map(uint64_t virt, uint64_t phys, uint64_t flags) {
     if (virt & (VMM_PAGE_SIZE - 1))
         return false;
@@ -160,6 +214,13 @@ bool vmm_map(uint64_t virt, uint64_t phys, uint64_t flags) {
     return true;
 }
 
+/**
+ * @brief Unmaps a page
+ * 
+ * @param virt The virtual address
+ * @return true It worked
+ * @return false It failed
+ */
 bool vmm_unmap(uint64_t virt) {
     if (virt & (VMM_PAGE_SIZE - 1))
         return false;
@@ -210,6 +271,12 @@ bool vmm_unmap(uint64_t virt) {
     return true;
 }
 
+/**
+ * @brief Gets the physical address of a virtual pointer
+ * 
+ * @param virt The virtual pointer
+ * @return uint64_t The physical address
+ */
 uint64_t vmm_get_phys(uint64_t virt) {
     uint64_t cr3 = read_cr3();
     uint64_t pml4_phys = cr3 & PAGE_MASK;
@@ -256,6 +323,14 @@ uint64_t vmm_get_phys(uint64_t virt) {
            (virt & 0xFFF);
 }
 
+/**
+ * @brief Maps multiple pages
+ * 
+ * @param virt Virtual target (base)
+ * @param phys The physical target (base)
+ * @param pages The amount of pages to map
+ * @param flags The flags for all pages
+ */
 void vmm_map_pages(uint64_t virt, uint64_t phys, uint64_t pages, uint64_t flags) {
     for (uint64_t i = 0; i < pages; i++) {
         if (!vmm_map(virt + (i * PAGE_SIZE), phys + (i * PAGE_SIZE), flags)) {
@@ -264,14 +339,28 @@ void vmm_map_pages(uint64_t virt, uint64_t phys, uint64_t pages, uint64_t flags)
     }
 }
 
-void vmm_free_pages(uint64_t virt, uint64_t pages) {
+/**
+ * @brief Unmaps multiple pages
+ * 
+ * @param virt The virtual address (base)
+ * @param pages The amount of pages to unmap
+ */
+bool vmm_free_pages(uint64_t virt, uint64_t pages) {
     for (uint64_t i = 0; i < pages; i++) {
         if (!vmm_unmap(virt + (i * PAGE_SIZE))) {
-            kpanic("VMM: failed to unmap page\n");
+            return false;
         }
     }
+    return true;
 }
 
+/**
+ * @brief Finds free pages
+ * 
+ * @param pages The amount of pages needed
+ * @param user Is it for the userland
+ * @return uint64_t The start (base) address
+ */
 uint64_t vmm_find_free_pages(uint64_t pages, bool user) {
     if (pages == 0)
         return 0;
@@ -299,6 +388,13 @@ uint64_t vmm_find_free_pages(uint64_t pages, bool user) {
     return 0;
 }
 
+/**
+ * @brief Checks if a page is mapped
+ * 
+ * @param virt The virtual address
+ * @return true Mapped
+ * @return false unmapped
+ */
 bool vmm_is_page_mapped(uint64_t virt) {
     if (virt & (PAGE_SIZE - 1))
         return false;
@@ -306,6 +402,10 @@ bool vmm_is_page_mapped(uint64_t virt) {
     return vmm_get_phys(virt) != 0;
 }
 
+/**
+ * @brief Sets up the VMM
+ * 
+ */
 void vmm_init(void) {
     uint64_t cr3 = read_cr3();
 

@@ -14,6 +14,10 @@
 
 static uint64_t ticks = 0;
 
+/**
+ * @brief A simpler handler for an lapic timer
+ * 
+ */
 void lapic_timer_drv(void) {
     ticks++;
     lapic_eoi();

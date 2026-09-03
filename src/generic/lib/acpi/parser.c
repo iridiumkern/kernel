@@ -18,6 +18,13 @@ static volatile struct limine_rsdp_request rsdp_request = {
     .revision = 6,
 };
 
+/**
+ * @brief Checks if the checksum of an RSDP/XSDP is valid to its considered length
+ * 
+ * @param ptr The ptr
+ * @param len Length
+ * @return int 1 if invalid, 0 if valid
+ */
 static int checksum_valid(const void *ptr, size_t len) {
     const uint8_t *bytes = (const uint8_t *)ptr;
     uint8_t sum = 0;
@@ -29,6 +36,13 @@ static int checksum_valid(const void *ptr, size_t len) {
     return sum == 0;
 }
 
+/**
+ * @brief Checks if a SDP is valid
+ * 
+ * @param rsdp The SDP is question (RSDP/XSDP)
+ * @return true Valid
+ * @return false Invalid
+ */
 bool sdp_valid(const struct RSDP_t *rsdp) {
     // First 20 bytes = the ACPI 1.0 portion of the structure (common to both)
     if (!checksum_valid(rsdp, sizeof(struct RSDP_t))) {
@@ -47,6 +61,13 @@ bool sdp_valid(const struct RSDP_t *rsdp) {
 
 void* spd_pointer = NULL;
 
+/**
+ * @brief Checksum on a SDT header
+ * 
+ * @param tableHeader The table header
+ * @return true Valid
+ * @return false Invalid
+ */
 bool doChecksum(struct SDT_header *tableHeader) {
     unsigned char sum = 0;
 
@@ -57,6 +78,13 @@ bool doChecksum(struct SDT_header *tableHeader) {
     return sum == 0;
 }
 
+/**
+ * @brief Finds an entry in the SDT
+ * 
+ * @param name The 4 character name of the ACPI table
+ * @param RootSDT The SDT (RSDT/XSDT)
+ * @return void* The pointer to the table (NULL if invalid)
+ */
 void *findEntry(const char* name, void *RootSDT) {
     if (krnl.acpi2) {
         struct XSDT_t *xsdt = (struct XSDT_t *) RootSDT;
@@ -79,20 +107,24 @@ void *findEntry(const char* name, void *RootSDT) {
         }
     }
 
-    // No FACP found
     return NULL;
 }
 
+/**
+ * @brief Parses the ACPI headers
+ * 
+ * @return acpi_ret If properly initialized
+ */
 acpi_ret parse_acpi(void) {
     // Grab the RSDP
     if (rsdp_request.response == NULL) {
-        kpanic("No RSDP/XSDP!\nPointer of RSDP request: %llx\n", rsdp_request.response);
+        return ACPI_MISSING;
     }
 
     // Grab the pointer to the RSDP/XSDP
     printf("RSDP pointer: %llx\n", rsdp_request.response->address);
     if (sdp_valid(rsdp_request.response->address) == false) {
-        kpanic("SDP corrupted\nSDP reported version: %llx\n", ((struct RSDP_t*)rsdp_request.response->address)->Revision);
+        return ACPI_ERROR;
     }
     
     spd_pointer = rsdp_request.response->address;
@@ -152,12 +184,7 @@ acpi_ret parse_acpi(void) {
         putchar_ft('\n');
 
         // Find FACP.
-        // No need to check if the facp is null as the parser does for us, if so it panics.
         void* facp = findEntry("FACP", xsdt);
-        if (!facp) {
-            // FACP should be present, if not either the kernel is broken or something else isnt working
-            kpanic("FACP is missing or equal to NULL!\n");
-        }
         parse_facp(facp);
 
         // Find (and init) the MADT
