@@ -161,8 +161,11 @@ void kmain(void) {
     
     if (!csprng_init()) {
         kpanic("CSPRNG_INIT FAILED!\n");
+    } else {
+        printf("csprng_init returned!\n");
     }
     sspsetup();
+    printf("returned from SSP setup!\n");
 
     parse_acpi();
     hcf();

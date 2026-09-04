@@ -28,7 +28,7 @@ bool csprng_init(void) {
     printf("random_u64 called\n");
 
     // Use SHA512 inputing dirtystuff and outputting into state
-    if (crypto_hash_sha512((void*)&state, (void*)&dirtystuff, 8) != 0) return false;
+    sha512_bytes((void*)&dirtystuff, 8, (void*)&state);
     printf("SHA512 called called!\n");
 
     memset(&dirtystuff, 0, 8);
@@ -49,7 +49,7 @@ bool csprng_addentropy(void* data, uint64_t size) {
     if (!range_is_mapped((uintptr_t)data, size)) return false;
     // Hash the data
     uint64_t hasheddata[8] = {0};
-    if (crypto_hash_sha512((void*)&hasheddata, data, size) != 0) return false;
+    sha512_bytes(data, 64, (void*)&hasheddata);
 
     // Mix the hashed data with the current state
     for (int i = 0; i < 8; i++) {
@@ -73,17 +73,9 @@ bool csprng_getrand(uint8_t *out) {
     if (!init) return false;
     if (!range_is_mapped((uintptr_t)out, 64)) return false;
     
-    if (crypto_hash_sha512((void*)&output, (void*)&state, 64) != 0) {
-        memset(&output, 0, 64);
-        memset(&newstate, 0, 64);
-        return false;
-    }
+    sha512_bytes((void*)&state,64, (void*)&output);
 
-    if (crypto_hash_sha512((void*)&newstate,(void*)&output, 64) != 0) {
-        memset(&output, 0, 64);
-        memset(&newstate, 0, 64);
-        return false;
-    }
+    sha512_bytes((void*)&output, 64, (void*)&newstate);
 
     // Add some extra entropy
     uint64_t tmpbuf;
