@@ -5,7 +5,10 @@
 #include <acpi/sdt.h>
 #include <stdbool.h>
 
-// structure for revision 0 (version 1.0)
+/**
+ * @brief RSDP for older ACPI based devices (rare to find)
+ * 
+ */
 struct RSDP_t {
     char Signature[8];
     uint8_t Checksum;
@@ -14,7 +17,10 @@ struct RSDP_t {
     uint32_t RsdtAddress;
 } __attribute__ ((packed));
 
-// structure for revision 2 (version 2.0+)
+/**
+ * @brief XSDP for most modern ACPI devices
+ * 
+ */
 struct XSDP_t {
     char Signature[8];
     uint8_t Checksum;

@@ -3,6 +3,10 @@
 #include <acpi/sdt.h>
 #include <stdint.h>
 
+/**
+ * @brief Generic Address Structure for the FADT
+ * 
+ */
 struct GenericAddressStructure {
     uint8_t AddressSpace;
     uint8_t BitWidth;
@@ -11,6 +15,10 @@ struct GenericAddressStructure {
     uint64_t Address;
 };
 
+/**
+ * @brief Fixed descriptor table for ACPI based devices
+ * 
+ */
 struct FADT {
     struct   SDT_header h;
     uint32_t FirmwareCtrl;
