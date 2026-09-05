@@ -1,14 +1,3 @@
-/**
- * @file pmm.c
- * @author apixeldev
- * @brief A simple Physical Memory Manager
- * @version 0.1
- * @date 2026-08-29
- * 
- * @copyright Copyright (c) 2026
- * 
- */
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -50,20 +39,10 @@ static inline void pmm_clear_range(uint64_t base, uint64_t length) {
         pmm_clear(page);
 }
 
-/**
- * @brief Sets up the PMM
- * 
- */
 void pmm_init(void) {
     if (!memmap.response)
         kpanic("PMM: memory map is NULL\n");
 
-    /*
-     * Start with every physical page allocated.
-     *
-     * This means we only ever expose memory that Limine explicitly
-     * identifies as usable.
-     */
     for (uint64_t i = 0; i < BITMAP_SIZE; i++)
         pmm_bitmap[i] = 0xff;
 
@@ -76,19 +55,11 @@ void pmm_init(void) {
         pmm_clear_range(entry->base, entry->length);
     }
 
-    /*
-     * Page zero should never be handed out.
-     */
     pmm_set(0);
 
     printf("PMM: initialized\n");
 }
 
-/**
- * @brief Allocates one page
- * 
- * @return uint64_t Physical page addr
- */
 uint64_t pmm_alloc(void) {
     for (uint64_t page = 0; page < MAX_PAGES; page++) {
         if (!pmm_test(page)) {
@@ -100,11 +71,6 @@ uint64_t pmm_alloc(void) {
     return 0;
 }
 
-/**
- * @brief Frees a page in the bitmap
- * 
- * @param address The page to free
- */
 void pmm_free(uint64_t address) {
     if (address & (PAGE_SIZE - 1))
         kpanic("PMM: attempted to free unaligned physical address\n");
@@ -120,12 +86,6 @@ void pmm_free(uint64_t address) {
     pmm_clear(page);
 }
 
-/**
- * @brief ALlocates multiple phys pages
- * 
- * @param pages Count of pages
- * @return uint64_t The (base) physical page
- */
 uint64_t pmm_alloc_pages(uint64_t pages) {
     if (pages == 0)
         return 0;
@@ -154,12 +114,6 @@ uint64_t pmm_alloc_pages(uint64_t pages) {
     return 0;
 }
 
-/**
- * @brief Frees multiple physical pages
- * 
- * @param address The (base) phys addr
- * @param pages The amount of pages to free
- */
 void pmm_free_pages(uint64_t address, uint64_t pages) {
     if (pages == 0)
         return;

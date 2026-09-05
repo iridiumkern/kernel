@@ -9,11 +9,6 @@ extern struct flanterm_context *flantermctx;
 extern void write_serial(char a);
 #endif
 
-/**
- * @brief Prints out a string
- * 
- * @param s The string
- */
 static void putstr(const char *s) {
     flanterm_write(flantermctx, s, __builtin_strlen(s));
     #ifdef __x86_64__
@@ -23,10 +18,6 @@ static void putstr(const char *s) {
     #endif
 }
 
-/**
- * @brief Prints out a single character
- * 
- */
 __attribute__((noinline)) void putchar_ft(char c) {
     // Fixes a bug on AARCH64 where referencing &c directly fails
     if (c == '\n') {
@@ -44,16 +35,6 @@ __attribute__((noinline)) void putchar_ft(char c) {
     #endif
 }
 
-/**
- * @brief Prints out a UINT
- * 
- * @param val Value to print
- * @param base The base its in
- * @param upper The amount of digits
- * @param width The width of padding
- * @param zero_pad Zero instead of ' '
- * @return int digit_count plus padding
- */
 static int print_uint_padded(uint64_t val, unsigned base, int upper, int width, int zero_pad) {
     char buf[32];
     const char *digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
@@ -84,15 +65,6 @@ static int print_uint_padded(uint64_t val, unsigned base, int upper, int width, 
     return digit_count + pad;
 }
 
-/**
- * @brief Prints out an int
- * 
- * @param val Value to print
- * @param base The base its in
- * @param width The width to pad
- * @param zero_pad Pad with 0 instead of ' '
- * @return int 
- */
 static int print_int_padded(int64_t val, unsigned base, int width, int zero_pad) {
     int count = 0;
     uint64_t uval;
@@ -110,13 +82,6 @@ static int print_int_padded(int64_t val, unsigned base, int width, int zero_pad)
     return count;
 }
 
-/**
- * @brief Formatted printing (takes va_list)
- * 
- * @param fmt The format
- * @param args Arguments
- * @return int Character count
- */
 int vprintf(const char *fmt, va_list args) {
     int count = 0;
 
@@ -236,13 +201,6 @@ int vprintf(const char *fmt, va_list args) {
     return count;
 }
 
-/**
- * @brief Formatted print
- * 
- * @param fmt The format
- * @param ... The arguments
- * @return int The count
- */
 int printf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);

@@ -1,24 +1,7 @@
-/**
- * @file hexdump.c
- * @author apixeldev
- * @brief Contains an xxd like function (hexdump)
- * @version 0.1
- * @date 2026-08-29
- * 
- * @copyright Copyright (c) 2026
- * 
- */
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
 
-/**
- * @brief XXD like formatted output
- * 
- * @param data The data being dumped
- * @param len The length of the data being dumped
- */
 void hexdump(const void *data, size_t len) {
     const uint8_t *p = (const uint8_t *)data;
 

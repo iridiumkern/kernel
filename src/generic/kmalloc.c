@@ -1,14 +1,3 @@
-/**
- * @file kmalloc.c
- * @author apixeldev
- * @brief Dynamic memory allocation
- * @version 0.1
- * @date 2026-08-29
- * 
- * @copyright Copyright (c) 2026
- * 
- */
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -37,16 +26,10 @@ static heap_block_t *heap_head = NULL;
 static uint64_t heap_start = 0;
 static uint64_t heap_end = 0;
 
-/*
- * Align an allocation upward.
- */
 static size_t align_up(size_t value) {
     return (value + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
 }
 
-/*
- * Find a free block using first-fit.
- */
 static heap_block_t *find_free_block(size_t size) {
     heap_block_t *block = heap_head;
 
@@ -60,13 +43,7 @@ static heap_block_t *find_free_block(size_t size) {
     return NULL;
 }
 
-/*
- * Split a block if enough space remains for another block.
- */
 static void split_block(heap_block_t *block, size_t size) {
-    /*
-     * Don't create useless tiny fragments.
-     */
     if (block->size < size + sizeof(heap_block_t) + ALIGNMENT)
         return;
 
@@ -88,9 +65,6 @@ static void split_block(heap_block_t *block, size_t size) {
     block->size = size;
 }
 
-/*
- * Merge block with the next block.
- */
 static void merge_next(heap_block_t *block) {
     heap_block_t *next = block->next;
 
@@ -104,9 +78,6 @@ static void merge_next(heap_block_t *block) {
         block->next->prev = block;
 }
 
-/*
- * Grow the heap by allocating and mapping more physical pages.
- */
 static bool heap_grow(size_t required) {
     size_t pages = (required + VMM_PAGE_SIZE - 1) / VMM_PAGE_SIZE;
 
@@ -141,9 +112,6 @@ static bool heap_grow(size_t required) {
     new_block->next = NULL;
     new_block->prev = NULL;
 
-    /*
-     * Add the new region to the block list.
-     */
     if (!heap_head) {
         heap_head = new_block;
     } else {
@@ -169,12 +137,6 @@ void kheap_init(void) {
     heap_head = NULL;
     heap_start = 0;
     heap_end = 0;
-
-    /*
-     * Lazily growing the heap means initialization itself
-     * doesn't need to consume memory. The first kmalloc()
-     * will grow it.
-     */
 }
 
 void *kmalloc(size_t size) {
@@ -185,9 +147,6 @@ void *kmalloc(size_t size) {
 
     heap_block_t *block = find_free_block(size);
 
-    /*
-     * No suitable block exists, so grow the heap.
-     */
     if (!block) {
         if (!heap_grow(size))
             return NULL;
@@ -214,18 +173,8 @@ void kfree(void *ptr) {
 
     block->free = true;
 
-    /*
-     * Coalesce forward first.
-     */
     merge_next(block);
 
-    /*
-     * Then coalesce backward.
-     *
-     * After merging with the previous block, we also
-     * merge that block with its next block in case
-     * there are multiple adjacent free blocks.
-     */
     if (block->prev && block->prev->free) {
         heap_block_t *prev = block->prev;
 
@@ -233,12 +182,5 @@ void kfree(void *ptr) {
         block = prev;
     }
 
-    /*
-     * One more forward merge handles chains such as:
-     *
-     * [free] [free] [free]
-     *
-     * after the backward merge.
-     */
     merge_next(block);
 }

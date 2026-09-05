@@ -5,15 +5,6 @@
 extern struct flanterm_context *flantermctx;
 extern void print_logo(void);
 
-/**
- * @brief The function behind the kpanic macro
- * 
- * @param file The file (provided by macro)
- * @param func The function (provided by macro)
- * @param line The line (provided by macro)
- * @param fmt The format string
- * @param ... Any args used by the format string like %x
- */
 __attribute__((noreturn)) void __kpanic(const char *file, const char *func, int line, const char *fmt, ...) {
     #ifdef __x86_64__
     __asm("cli");

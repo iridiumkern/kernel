@@ -1,17 +1,5 @@
-/**
- * @file madt_parser.c
- * @author apixeldev
- * @brief Sets up the MADT (well more accurate to say that it parses it)
- * @version 0.1
- * @date 2026-08-29
- * 
- * @copyright Copyright (c) 2026
- * 
- */
-
 #include <debug.h>
 #include <x86_64/vmm.h>
-#include <stdio.h>
 #include <stddef.h>
 #include <acpi/types.h>
 #include <acpi/madt.h>
@@ -23,12 +11,6 @@ extern void lapic_init(uint64_t lapic_virtual);
 extern void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base, uint8_t bsp_lapic_id);
 extern void ioapic_register_iso(uint8_t source, uint32_t gsi);
 
-/**
- * @brief Parses the MADT
- * 
- * @param madt The pointer to the MADT
- * @return acpi_ret The state of the madt parser
- */
 acpi_ret madt_parse(struct madt* madt) {
     if (!madt) {
         // Used for when a feature and or table or other thing is not there/available

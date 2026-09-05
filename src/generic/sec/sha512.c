@@ -1,6 +1,3 @@
-// This is a public domain implementation of SHA-512.
-// Based on the SHA-256 implementation at https://github.com/983/SHA-256.
-
 #include <stddef.h>
 #include <stdint.h>
 

@@ -1,23 +1,5 @@
-/**
- * @file jmp.c
- * @author apixeldev
- * @brief Contains klongjmp and ksetjmp
- * @version 0.1
- * @date 2026-08-29
- * 
- * @copyright Copyright (c) 2026
- * 
- */
-
 #include <stdint.h>
 #include <x86_64/priv/jmp.h>
-
-/*
-This provides the structs needed for storing registers in klongjmp and ksetjmp
-These are used for specific error handling when needed in noncritial parts of the kernel
-For error recovery. Though in some cases they might need to run kpanic and will return an error code specifically for that
-So the failing case is easier to find than the generic handler being used
-*/
 
 __attribute__((naked)) int ksetjmp(jmpctx_t *ctx) {
     __asm__ volatile (

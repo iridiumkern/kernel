@@ -1,23 +1,8 @@
-/**
- * @file exception.c
- * @author apixeldev
- * @brief Handles exceptions for page faults and the like.
- * @version 0.1
- * @date 2026-08-29
- * 
- * @copyright Copyright (c) 2026
- * 
- */
-
 #include <stdio.h>
 #include "../../src/generic/lib/flanterm/src/flanterm.h"
 
 extern struct flanterm_context *flantermctx;
 
-/**
- * @brief The interrupt frame
- * 
- */
 struct interrupt_frame {
     uint64_t exception_code;
     uint64_t errorcode;
@@ -30,11 +15,6 @@ struct interrupt_frame {
     uint64_t ss;
 };
 
-/**
- * @brief Reads the CR2 register
- * 
- * @return uint64_t The faulting address that causes the page fault
- */
 static inline uint64_t read_cr2(void) {
     uint64_t value;
     __asm__ volatile ("mov %0, cr2" : "=r"(value));
@@ -71,10 +51,6 @@ static const char* decode_exception(uint64_t exception) {
     }
 }
 
-/**
- * @brief Handles exceptions
- *
- */
 __attribute__((noreturn))
 void exception_handler(struct interrupt_frame *frame) {
     __asm__ volatile ("cli");

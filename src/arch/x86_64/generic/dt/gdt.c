@@ -1,14 +1,3 @@
-/**
- * @file gdt.c
- * @author apixeldev
- * @brief Sets up the GDT for Ring0 and Ring 3 things. Some Ring1 trickery may be added in the future.
- * @version 0.1
- * @date 2026-08-29
- * 
- * @copyright Copyright (c) 2026
- * 
- */
-
 #include <stdint.h>
  
 // Each define here is for a specific flag in the descriptor.
@@ -54,15 +43,6 @@
                      SEG_LONG(0)     | SEG_SIZE(0) | SEG_GRAN(1) | \
                      SEG_PRIV(3)     | SEG_DATA_RDWR
 
-
-/**
- * @brief Create a descriptor object
- * 
- * @param base The linear address where the segment begins (NA on x86_64)
- * @param limit The 20 bit value, maximum addressable unit (can be anything on x86_64)
- * @param flag Flags defining the segments and parts (SEG_PRIV is the ring, SEG_LONG is if its x86_64 or 32bit, only applies to code segments however)
- * @return uint64_t The descriptor to use in the actual GDT
- */
 uint64_t create_descriptor(uint32_t base, uint32_t limit, uint16_t flag) {
     uint64_t descriptor;
  
@@ -93,12 +73,6 @@ struct gdtr gdtr;
 
 extern void reloadSegments(void);
 extern void setGdt(void*);
-
-/**
- * @brief Sets up the GDT
- * 
- * @return int Always zero, in the future error cases and panics will happen
- */
 int gdt_init(void) {
     gdt[0] = create_descriptor(0, 0, 0);
     gdt[1] = create_descriptor(0, 0x000FFFFF, (GDT_CODE_PL0));

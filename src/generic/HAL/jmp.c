@@ -3,11 +3,6 @@
 #endif
 #include <stdlib.h>
 
-/**
- * @brief Allocates a pointer for setjmp and longjmp
- * 
- * @return void* The pointer allocated, invalid if NULL
- */
 void* allocjmp(void) {
     #ifdef __x86_64__
     return kmalloc(sizeof(jmpctx_t));

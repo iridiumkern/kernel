@@ -4,11 +4,6 @@
 #include <acpi/sdt.h>
 #include <kernel.h>
 
-/**
- * @brief Parses the FACP
- * 
- * @param facpptr Pointer to the FACP
- */
 void parse_facp(void* facpptr) {
     if (!facpptr) {
         kpanic("FACP pointer is NULL!\nPTR = %llx\n", facpptr);

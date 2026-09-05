@@ -10,10 +10,6 @@ const char logo[] =
     " /$$$$$$| $$      | $$|  $$$$$$$| $$|  $$$$$$/| $$ | $$ | $$\n"
     "|______/|__/      |__/ \\_______/|__/ \\______/ |__/ |__/ |__/\n";
 
-/**
- * @brief Prints out the iridium logo
- * 
- */
 void print_logo(void) {
     printf(logo);
 }

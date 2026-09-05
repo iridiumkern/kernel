@@ -1,14 +1,3 @@
-/**
- * @file lapic.c
- * @author apixeldev
- * @brief Sets up the lapic and lapic timer (calibrated with the PIT)
- * @version 0.1
- * @date 2026-08-29
- * 
- * @copyright Copyright (c) 2026
- * 
- */
-
 #include <x86_64/io.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -53,11 +42,6 @@
 static volatile uint32_t *lapic;
 static uint64_t pit_ticks;
 
-/**
- * @brief Prepares how long the PIT should sleep for, calibration for the system timer
- * 
- * @param usec The amount of nanoseconds that it should sleep for
- */
 void pit_prepare_sleep(uint32_t usec) {
     uint64_t ticks = (PIT_FREQUENCY * usec) / 1000000ULL;
 
@@ -75,10 +59,6 @@ void pit_prepare_sleep(uint32_t usec) {
     outb(PIT_CHANNEL0, pit_ticks >> 8);
 }
 
-/**
- * @brief Performs the sleep that was prepared
- * 
- */
 void pit_perform_sleep(void) {
     outb(PIT_COMMAND, 0xE2);
 
@@ -86,30 +66,14 @@ void pit_perform_sleep(void) {
         __asm__ volatile ("pause");
 }
 
-/**
- * @brief Reads from the lapic
- * 
- * @param reg The lapic register being read
- * @return uint32_t The value in the register
- */
 static inline uint32_t lapic_read(uint32_t reg) {
     return lapic[reg / sizeof(uint32_t)];
 }
 
-/**
- * @brief Writes to an lapic register
- * 
- * @param reg The register being written to
- * @param value The value to write to the register
- */
 static inline void lapic_write(uint32_t reg, uint32_t value) {
     lapic[reg / sizeof(uint32_t)] = value;
 }
 
-/**
- * @brief Calibrates and sets up the lapic timer
- * 
- */
 void apic_start_timer(void) {
     lapic_write(LAPIC_TIMER_DIV, 0x3);
 
@@ -131,19 +95,10 @@ void apic_start_timer(void) {
     lapic_write(LAPIC_TIMER_INIT, ticks_in_1ms);
 }
 
-/**
- * @brief EOI for an lapic
- * 
- */
 void lapic_eoi(void) {
     lapic_write(LAPIC_EOI, 0);
 }
 
-/**
- * @brief Sets up an lapic
- * 
- * @param lapic_virtual The virtual address of the lapic in question
- */
 void lapic_init(uint64_t lapic_virtual) {
     lapic = (volatile uint32_t *)lapic_virtual;
 

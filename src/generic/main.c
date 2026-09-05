@@ -78,10 +78,6 @@ extern void kinit(void);
 extern void print_logo(void);
 extern void sspsetup(void);
 
-/**
- * @brief The entry for the kernel
- * 
- */
 void kmain(void) {
     if (!LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision)) {
         hcf();
