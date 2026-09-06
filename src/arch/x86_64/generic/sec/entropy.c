@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <cpuid.h>
 
-static inline uint64_t rdtsc(void) {
+uint64_t rdtsc(void) {
     uint32_t lo, hi;
 
     __asm__ volatile (

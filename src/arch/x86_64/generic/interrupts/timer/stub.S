@@ -20,6 +20,7 @@ lapic_timer_stub:
     push r14
     push r15
 
+    lea rdi, [rsp]
     call lapic_timer_drv
 
     pop r15

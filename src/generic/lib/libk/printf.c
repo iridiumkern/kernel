@@ -24,7 +24,7 @@ __attribute__((noinline)) void putchar_ft(char c) {
         char cr = '\r';
         flanterm_write(flantermctx, &cr, 1);
         #ifdef __x86_64__
-        write_serial('\r');
+        write_serial(cr);
         #endif
     }
     char buf[1];
@@ -33,6 +33,18 @@ __attribute__((noinline)) void putchar_ft(char c) {
     #ifdef __x86_64__
     write_serial(buf[0]);
     #endif
+    if (c == '\b') {
+        char cr = ' ';
+        flanterm_write(flantermctx, &cr, 1);
+        #ifdef __x86_64__
+        write_serial(cr);
+        #endif
+        cr = '\b';
+        flanterm_write(flantermctx, &cr, 1);
+        #ifdef __x86_64__
+        write_serial(cr);
+        #endif
+    }
 }
 
 static int print_uint_padded(uint64_t val, unsigned base, int upper, int width, int zero_pad) {
