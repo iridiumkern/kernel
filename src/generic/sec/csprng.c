@@ -35,7 +35,7 @@ bool csprng_addentropy(void* data, uint64_t size) {
     if (!range_is_mapped((uintptr_t)data, size)) return false;
     // Hash the data
     uint64_t hasheddata[8] = {0};
-    sha512_bytes(data, 64, (void*)&hasheddata);
+    sha512_bytes(data, size, (void*)&hasheddata);
 
     // Mix the hashed data with the current state
     for (int i = 0; i < 8; i++) {

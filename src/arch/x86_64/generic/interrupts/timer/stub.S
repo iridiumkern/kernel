@@ -20,8 +20,23 @@ lapic_timer_stub:
     push r14
     push r15
 
-    lea rdi, [rsp]
+    mov r12, rsp
+
+    sub rsp, 512
+    and rsp, -16
+
+    mov r13, rsp
+
+    fxsave [r13]
+
+    mov rdi, r12
+    mov rsi, r13
+
     call lapic_timer_drv
+
+    fxrstor [r13]
+
+    mov rsp, r12
 
     pop r15
     pop r14

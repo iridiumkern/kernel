@@ -1,43 +1,33 @@
+#include <x86_64/schedarch.h>
 #include <x86_64/apic.h>
 #include <scheduler.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 static uint64_t ticks = 0;
 
-typedef struct lapic_timer_frame {
-    uint64_t r15;
-    uint64_t r14;
-    uint64_t r13;
-    uint64_t r12;
-    uint64_t r11;
-    uint64_t r10;
-    uint64_t r9;
-    uint64_t r8;
-    uint64_t rbp;
-    uint64_t rdi;
-    uint64_t rsi;
-    uint64_t rdx;
-    uint64_t rcx;
-    uint64_t rbx;
-    uint64_t rax;
-
-    uint64_t rip;
-    uint64_t cs;
-    uint64_t rflags;
-
-    uint64_t rsp;
-    uint64_t ss;
-} lapic_timer_frame_t;
-
-void lapic_timer_drv(lapic_timer_frame_t *frame) {
+void lapic_timer_drv(regs_frame_t *frame, fxsave_area_t* fxsave) {
+    (void)fxsave;
     ticks++;
     // Check if we are in userland or not.
-    if (frame->cs & 0x03) {
-        thread_t *current = get_current_thread();
-        if (current == NULL) {
-            lapic_eoi();
-            return;
+    // If so we start our fun work!
+    if ((ticks % 5) == 0) {
+        if (frame->cs & 0x03) {
+            thread_t *current = get_current_thread();
+            if (current) {
+                // Save current thread state
+                regs_thread_state_t *state = (regs_thread_state_t *)current->archdata;
+                memcpy(&state->frame, frame, sizeof(regs_frame_t));
+                memcpy(&state->fxsave, fxsave, sizeof(fxsave_area_t));
+            }
+            // Run the next task
+            thread_t *next = schedule();
+            if (next) {
+                regs_thread_state_t *state = (regs_thread_state_t *)next->archdata;
+                memcpy(frame, &state->frame, sizeof(regs_frame_t));
+                memcpy(fxsave, &state->fxsave, sizeof(fxsave_area_t));
+            }
         }
     }
     lapic_eoi();

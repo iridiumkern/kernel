@@ -32,7 +32,6 @@ CFLAGS += -DMINORVER=\"$(MINOR)\"
 ifeq ($(ARCH),x86_64)
 	TARGET := x86_64-unknown-none-elf
 	CFLAGS += -m64 -march=x86-64 -mabi=sysv \
-			  -mno-mmx \
 			  -mno-red-zone -mcmodel=kernel \
 			  -masm=intel
 	LDFLAGS += -m elf_x86_64
