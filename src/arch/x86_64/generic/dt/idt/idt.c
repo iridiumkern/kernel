@@ -22,6 +22,7 @@ __attribute__((aligned(0x10)))
 static idt_entry_t idt[256]; // Create an array of IDT entries; aligned for performance
 static idtr_t idtr;
 
+// Creates and registers a descriptor in the IDT
 void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
     idt_entry_t* descriptor = &idt[vector];
 

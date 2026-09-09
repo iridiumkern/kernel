@@ -12,6 +12,10 @@ void lapic_timer_drv(regs_frame_t *frame, fxsave_area_t* fxsave) {
     ticks++;
     // Check if we are in userland or not.
     // If so we start our fun work!
+    /*
+    NOTE: The scheduler is entirely untested and no functional userland code has been ran so far
+    This may entirely crash, if anyone wants to check if it will work, PLEASE DO
+    */
     if ((ticks % 5) == 0) {
         if (frame->cs & 0x03) {
             thread_t *current = get_current_thread();

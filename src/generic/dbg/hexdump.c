@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+// XXD like output
 void hexdump(const void *data, size_t len) {
     const uint8_t *p = (const uint8_t *)data;
 

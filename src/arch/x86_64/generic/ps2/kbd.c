@@ -9,7 +9,8 @@ uint64_t lastkeyentry = 0;
 
 bool shift_down = false;
 
-char decode_scancode(uint8_t scancode) {
+// A small setup to decode scancodes in the PS2 keyboard
+static char decode_scancode(uint8_t scancode) {
     bool shift = shift_down;
     scancode &= 0x7F;
 

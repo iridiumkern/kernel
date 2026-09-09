@@ -59,6 +59,7 @@ void pit_prepare_sleep(uint32_t usec) {
     outb(PIT_CHANNEL0, pit_ticks >> 8);
 }
 
+// Sleeps for the configured usecs
 void pit_perform_sleep(void) {
     outb(PIT_COMMAND, 0xE2);
 
@@ -79,6 +80,7 @@ void apic_start_timer(void) {
 
     lapic_write(LAPIC_TIMER_INIT, 0xFFFFFFFF);
 
+    // Sleeps for 1ms
     pit_prepare_sleep(1000);
     pit_perform_sleep();
 

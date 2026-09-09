@@ -73,6 +73,7 @@ struct gdtr gdtr;
 
 extern void reloadSegments(void);
 extern void setGdt(void*);
+
 int gdt_init(void) {
     gdt[0] = create_descriptor(0, 0, 0);
     gdt[1] = create_descriptor(0, 0x000FFFFF, (GDT_CODE_PL0));

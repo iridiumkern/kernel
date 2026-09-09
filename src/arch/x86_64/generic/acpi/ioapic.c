@@ -61,6 +61,7 @@ void ioapic_route_gsi(uint32_t gsi, uint8_t vector, uint8_t bsp_lapic_id) {
 }
 
 uint32_t ioapic_get_gsi(uint8_t source) {
+    // Gets a GSI for any interrupt, this goes for legacy ISA stuff, and basically anything
     for (size_t i = 0; i < iso_count; i++) {
         if (isos[i].source == source)
             return isos[i].gsi;
@@ -71,6 +72,7 @@ uint32_t ioapic_get_gsi(uint8_t source) {
 }
 
 void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lapic_id) {
+    // Sets up global variables for ioapic related things
     base = ioapic_virtual;
     gsi_base = gsi_base_glb;
 
@@ -78,6 +80,7 @@ void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lap
     uint32_t max_redirection = (version >> 16) & 0xFF;
     uint32_t redirection_count = max_redirection + 1;
 
+    // Sets up all the interrupts to route to the BSP lapic and masks them
     for (uint32_t i = 0; i < redirection_count; i++) {
         uint8_t low_reg  = 0x10 + (i * 2);
         uint8_t high_reg = low_reg + 1;
@@ -89,7 +92,8 @@ void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lap
         ioapic_write(low_reg, 1u << 16);
     }
 
-    // Maps in the PS/2 keyboard
+    // Maps in the PS/2 keyboard (if it exists, this will crash on some older devices that dont have a PS/2 keyboard)
+    // Should prolly be replaced with an actual check rather than something which risks a crash
     outb(0x64, 0xAA);
 
     while (!(inb(0x64) & 1));

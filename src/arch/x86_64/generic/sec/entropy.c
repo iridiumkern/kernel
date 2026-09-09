@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <cpuid.h>
 
+// Reads from the TSC
 uint64_t rdtsc(void) {
     uint32_t lo, hi;
 
@@ -28,6 +29,7 @@ static inline bool rdrand64(uint64_t *out) {
     return ok;
 }
 
+// Generic function for random unsigned 64bit integers
 bool random_u64(uint64_t *out) {
     uint64_t jitter1 = rdtsc();
 

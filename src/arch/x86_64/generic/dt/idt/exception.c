@@ -51,8 +51,7 @@ static const char* decode_exception(uint64_t exception) {
     }
 }
 
-__attribute__((noreturn))
-void exception_handler(struct interrupt_frame *frame) {
+__attribute__((noreturn)) void exception_handler(struct interrupt_frame *frame) {
     __asm__ volatile ("cli");
 
     flanterm_clear(flantermctx, true);
