@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 struct tar_header {
     char filename[100];
     char mode[8];
@@ -22,6 +24,7 @@ struct tar_header {
 
 struct tar_wrapper {
     struct tar_header h;
+    uintptr_t address;
     struct tar_wrapper *next;
 };
 

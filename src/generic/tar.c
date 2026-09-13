@@ -37,8 +37,10 @@ uintptr_t tar_init(uintptr_t address) {
         uintptr_t size = getsize(next->h.size);
         uintptr_t blocks = (size + 511) / 512;
 
+        // Sets next->address (where the data is)
+        next->address = address + 512;
+        
         address += 512 + blocks * 512;
-
         next->next = kmalloc(sizeof(struct tar_wrapper));
 
         if (next->next == NULL) break;
@@ -53,11 +55,8 @@ uintptr_t tar_init(uintptr_t address) {
 struct tar_wrapper *tar_getfile(const char* name) {
     struct tar_wrapper *next = rootentry;
     while (next != NULL) {
-        if (memcmp(name, next->h.filename, strlen(name))) {
+        if (memcmp(name, next->h.filename, strlen(name)) == 0) {
             return next;
-        }
-        if (next->next == NULL) {
-            return NULL;
         }
         next = next->next;
     }

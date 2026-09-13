@@ -175,7 +175,14 @@ void kmain(void) {
 
     parse_acpi();
 
-    uint8_t data[] = {0xeb, 0xfe};
+    // Load userland.tar
+    if (module_request.response->module_count != 1) {
+        // Kernel should only have one module, a tar file
+        kpanic("Passed more than one file! Only file should be userland.tar!\n");
+    }
+    tar_init((uintptr_t)(module_request.response->modules[0]->address));
+    struct tar_wrapper *usr = tar_getfile("userland/test.bin");
+    uint8_t *data = (uint8_t*)usr->address;
     #ifdef __x86_64__
     uint64_t phys = pmm_alloc();
     vmm_map(0x10000, phys, VMM_P | VMM_US | VMM_RW);
