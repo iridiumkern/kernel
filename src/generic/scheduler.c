@@ -127,7 +127,6 @@ process_t *addproc(void) {
     proc->pid = getpid();
     proc->nexthread = 0;
     proc->threads = NULL;
-    proc->archdata = NULL;
     proc->next = NULL;
 
     if (rootproc == NULL) {
@@ -180,9 +179,6 @@ bool delproc(uint64_t pid) {
 
                 thread = next;
             }
-
-            if (proc->archdata != NULL)
-                kfree(proc->archdata);
 
             kfree(proc);
 

@@ -17,6 +17,7 @@
 #include <stdio.h>
 
 #include <sec/random.h>
+#include <scheduler.h>
 #include <string.h>
 #include <debug.h>
 #include <panic.h>
@@ -24,6 +25,7 @@
 #include <tar.h>
 
 #ifdef __x86_64__
+#include <x86_64/schedarch.h>
 #include <x86_64/vmm.h>
 #endif
 
@@ -187,7 +189,19 @@ void kmain(void) {
     vmm_map(0x10000, phys, VMM_P | VMM_US | VMM_RW);
     memcpy((void*)0x10000, data, 2);
     hexdump((void*)0x10000, 2);
-    jump_usermode(0x10000, 0x10000 + 4096 - 1);
+
+    // Create the new proc (in this case it should be PID0)
+    process_t *proc = addproc();
+    if (proc->pid != 0) {
+        kpanic("First allocated process did not have PID0! PID was: %d\n", proc->pid);
+    }
+    thread_t *thrd = addthrd(proc->pid);
+    thrd->archdata = kmalloc(sizeof(regs_thread_state_t));
+    thrd->instruction_ptr = 0x10000; 
+    thrd->stack_ptr = 0x10000 + 4096;
+    thrd->state = THREAD_RUNNING;
+
+    jump_usermode(thrd->instruction_ptr, thrd->stack_ptr);
     #endif
     hcf();
 }

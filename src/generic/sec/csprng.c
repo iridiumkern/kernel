@@ -53,17 +53,23 @@ bool csprng_getrand(uint8_t *out) {
     if (!range_is_mapped((uintptr_t)out, 64)) return false;
     
     sha512_bytes((void*)&state,64, (void*)&output);
-
     sha512_bytes((void*)&output, 64, (void*)&newstate);
 
     // Add some extra entropy
     uint64_t tmpbuf;
-    if (!random_u64(&tmpbuf)) return false;
+    if (!random_u64(&tmpbuf)) {
+        memset(output, 0, 64);
+        memset(newstate, 0, 64);
+        return false;
+    }
 
     // Copy the new state and then add in entropy
     memcpy(state, newstate, 64);
-    if (!csprng_addentropy(&tmpbuf, 8)) return false;
-
+    if (!csprng_addentropy(&tmpbuf, 8)) {
+        memset(output, 0, 64);
+        memset(newstate, 0, 64);
+        return false;
+    }
     // Zero the state from the stack
     memcpy(out, output, 64);
     memset(output, 0, 64);

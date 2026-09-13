@@ -18,6 +18,8 @@
 #define VMM_KERNEL_START 0xFFFF800100000000ULL
 #define VMM_KERNEL_END   0xFFFFFFFFFFFFF000ULL
 
+static uint64_t reference_cr3 = 0;
+
 uint64_t read_cr3(void) {
     uint64_t cr3;
 
@@ -38,6 +40,9 @@ void write_cr3(uint64_t cr3) {
     );
 }
 
+// Though this works for now
+// I may migrate away from using the HHDM
+// And use a recursive PML4 slot at some point
 static inline uint64_t *phys_to_virt(uint64_t phys) {
     return (uint64_t *)(uintptr_t)(phys + krnl.hhdm_offset);
 }
@@ -244,14 +249,12 @@ uint64_t vmm_get_phys(uint64_t virt) {
         return 0;
 
     /*
-     * We aren't supporting 2 MiB pages yet.
+     * We aren't supporting 2MiB/1GB pages yet.
      */
     if (pd[pd_i] & VMM_PS)
-        return (pd[pd_i] & 0x000FFFFFFFE00000ULL) |
-               (virt & 0x1FFFFFULL);
+        return (pd[pd_i] & 0x000FFFFFFFE00000ULL) | (virt & 0x1FFFFFULL);
 
-    uint64_t *pt =
-        phys_to_virt(pd[pd_i] & PAGE_MASK);
+    uint64_t *pt = phys_to_virt(pd[pd_i] & PAGE_MASK);
 
     uint64_t pt_i = pt_index(virt);
 
@@ -315,6 +318,7 @@ bool vmm_is_page_mapped(uint64_t virt) {
 
 void vmm_init(void) {
     uint64_t cr3 = read_cr3();
+    reference_cr3 = cr3;
     printf("VMM: CR3: %lx\n", cr3 & PAGE_MASK);
     printf("VMM: HHDM: %lx\n", krnl.hhdm_offset);
     printf("VMM: initialized\n");
