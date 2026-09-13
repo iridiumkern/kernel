@@ -21,7 +21,8 @@ jobs:
             build-essential \
             xorriso \
             mtools \
-            nasm
+            nasm \
+            lld
 
       - name: Build
         run: make
