@@ -59,12 +59,13 @@ bool csprng_getrand(uint8_t *out) {
     // Add some extra entropy
     uint64_t tmpbuf;
     random_u64(&tmpbuf);
+
+    // Copy the new state and then add in entropy
+    memcpy(state, newstate, 64);
     csprng_addentropy(&tmpbuf, 8);
 
-    memcpy(state, newstate, 64);
-
+    // Zero the state from the stack
     memcpy(out, output, 64);
-
     memset(output, 0, 64);
     memset(newstate, 0, 64);
     return true;
