@@ -33,6 +33,6 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: iridium-build
-          path: build/**/*.hdd
+          name: x86_64 Iridium HDD disk (generic)
+          path: x86_64/generic/iridium.hdd
           retention-days: 90
