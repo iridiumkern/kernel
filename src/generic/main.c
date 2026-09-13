@@ -156,7 +156,6 @@ void kmain(void) {
     print_logo();
     printf("Iridium %s\n", VERSION_STRING);
     printf("Iridium is brought to you under the GPLv3!\n");
-    printf("For more information please read the LICENSE file shipped with this copy of the OS.\n");
     
     kinit();
     pmm_init();

@@ -1,3 +1,6 @@
+// Code taken from https://gist.github.com/shibatch/238c618a027f67935926df9d1149a677/
+// You can treat this file as Public Domain as the orignal work was
+
 #include <stddef.h>
 #include <stdint.h>
 
