@@ -62,29 +62,78 @@ uint64_t create_descriptor(uint32_t base, uint32_t limit, uint16_t flag) {
     return descriptor;
 }
 
-uint64_t gdt[5];
+uint64_t gdt[7];
 
 struct gdtr {
     uint16_t limit;
     uint64_t base;
 } __attribute__((packed));
 
+struct tss {
+	uint32_t reserved0;
+	uint64_t rsp0;
+	uint64_t rsp1;
+	uint64_t rsp2;
+	uint64_t reserved1;
+	uint64_t ist1;
+	uint64_t ist2;
+	uint64_t ist3;
+	uint64_t ist4;
+	uint64_t ist5;
+	uint64_t ist6;
+	uint64_t ist7;
+	uint64_t reserved2;
+	uint16_t reserved3;
+	uint16_t iomap_base;
+} __attribute__((packed));
+
+static struct tss tss;
 struct gdtr gdtr;
 
 extern void reloadSegments(void);
 extern void setGdt(void*);
 
-int gdt_init(void) {
-    gdt[0] = create_descriptor(0, 0, 0);
-    gdt[1] = create_descriptor(0, 0x000FFFFF, (GDT_CODE_PL0));
-    gdt[2] = create_descriptor(0, 0x000FFFFF, (GDT_DATA_PL0));
-    gdt[3] = create_descriptor(0, 0x000FFFFF, (GDT_CODE_PL3));
-    gdt[4] = create_descriptor(0, 0x000FFFFF, (GDT_DATA_PL3));
+static void create_tss_descriptor(uint64_t base, uint32_t limit) {
+	uint64_t low;
+	uint64_t high;
 
-    gdtr.limit = sizeof(gdt) - 1;
-    gdtr.base = (uint64_t)&gdt[0];
-    setGdt(&gdtr);
-    reloadSegments();
- 
-    return 0;
+	low = 0;
+	low |= limit & 0xFFFF;
+	low |= (base & 0xFFFFFF) << 16;
+	low |= 0x89ULL << 40;
+	low |= ((uint64_t)(limit >> 16) & 0xF) << 48;
+	low |= ((uint64_t)(base >> 24) & 0xFF) << 56;
+
+	high = base >> 32;
+
+	gdt[5] = low;
+	gdt[6] = high;
+}
+
+extern void loadTss(uint64_t);
+
+int gdt_init(uint64_t kernel_stack_top) {
+	gdt[0] = create_descriptor(0, 0, 0);
+	gdt[1] = create_descriptor(0, 0x000FFFFF, GDT_CODE_PL0);
+	gdt[2] = create_descriptor(0, 0x000FFFFF, GDT_DATA_PL0);
+	gdt[3] = create_descriptor(0, 0x000FFFFF, GDT_CODE_PL3);
+	gdt[4] = create_descriptor(0, 0x000FFFFF, GDT_DATA_PL3);
+
+	tss.rsp0 = kernel_stack_top;
+	tss.iomap_base = sizeof(tss);
+
+	create_tss_descriptor(
+		(uint64_t)&tss,
+		sizeof(tss) - 1
+	);
+
+	gdtr.limit = sizeof(gdt) - 1;
+	gdtr.base = (uint64_t)&gdt[0];
+
+	setGdt(&gdtr);
+	reloadSegments();
+
+	loadTss(5 * 8);
+
+	return 0;
 }

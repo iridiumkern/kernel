@@ -1,7 +1,6 @@
-.intel_syntax noprefix
-
 .global reloadSegments
 .global setGdt
+.global loadTss
 
 reloadSegments:
     push 0x08
@@ -21,3 +20,8 @@ reloadSegments:
 setGdt:
     lgdt [rdi]
     ret
+
+loadTss:
+	mov ax, di
+	ltr ax
+	ret

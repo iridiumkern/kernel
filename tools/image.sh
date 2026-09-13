@@ -38,9 +38,13 @@ mmd -i "$IMAGE@@1M" \
 	::/boot \
 	::/boot/limine
 
+nasm -fbin userland/testapp.asm -o userland/test.bin
+tar -cf userland.tar userland/test.bin
+
 # Copy kernel and Limine files.
 mcopy -i "$IMAGE@@1M" "$KERNEL" ::/boot
 mcopy -i "$IMAGE@@1M" limine.conf "$LIMINE_DIR/limine-bios.sys" ::/boot/limine
 mcopy -i "$IMAGE@@1M" "$LIMINE_DIR/BOOTX64.EFI" ::/EFI/BOOT
 mcopy -i "$IMAGE@@1M" "$LIMINE_DIR/BOOTIA32.EFI" ::/EFI/BOOT
 mcopy -i "$IMAGE@@1M" "$LIMINE_DIR/BOOTAA64.EFI" ::/EFI/BOOT
+mcopy -i "$IMAGE@@1M" "userland.tar" ::/boot/

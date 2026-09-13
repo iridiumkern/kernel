@@ -73,80 +73,97 @@ static inline uint64_t pt_index(uint64_t virt) {
 }
 
 bool vmm_map(uint64_t virt, uint64_t phys, uint64_t flags) {
-    if (virt & (VMM_PAGE_SIZE - 1))
-        return false;
+	if (virt & (VMM_PAGE_SIZE - 1))
+		return false;
 
-    if (phys & (VMM_PAGE_SIZE - 1))
-        return false;
+	if (phys & (VMM_PAGE_SIZE - 1))
+		return false;
 
-    uint64_t cr3 = read_cr3();
-    uint64_t pml4_phys = cr3 & PAGE_MASK;
+	uint64_t cr3 = read_cr3();
+	uint64_t pml4_phys = cr3 & PAGE_MASK;
 
-    uint64_t *pml4 = phys_to_virt(pml4_phys);
+	uint64_t *pml4 = phys_to_virt(pml4_phys);
 
-    /*
-     * PML4
-     */
-    uint64_t pml4_i = pml4_index(virt);
+	bool user = flags & VMM_US;
 
-    if (!(pml4[pml4_i] & VMM_P)) {
-        uint64_t table = vmm_alloc_table();
+	/*
+	 * PML4
+	 */
+	uint64_t pml4_i = pml4_index(virt);
 
-        pml4[pml4_i] = table | VMM_P | VMM_RW;
-    }
+	if (!(pml4[pml4_i] & VMM_P)) {
+		uint64_t table = vmm_alloc_table();
 
-    uint64_t *pdpt =
-        phys_to_virt(pml4[pml4_i] & PAGE_MASK);
+		pml4[pml4_i] = table | VMM_P | VMM_RW;
 
-    /*
-     * PDPT
-     */
-    uint64_t pdpt_i = pdpt_index(virt);
+		if (user)
+			pml4[pml4_i] |= VMM_US;
+	} else if (user) {
+		pml4[pml4_i] |= VMM_US;
+	}
 
-    if (!(pdpt[pdpt_i] & VMM_P)) {
-        uint64_t table = vmm_alloc_table();
+	uint64_t *pdpt =
+		phys_to_virt(pml4[pml4_i] & PAGE_MASK);
 
-        pdpt[pdpt_i] = table | VMM_P | VMM_RW;
-    }
+	/*
+	 * PDPT
+	 */
+	uint64_t pdpt_i = pdpt_index(virt);
 
-    uint64_t *pd =
-        phys_to_virt(pdpt[pdpt_i] & PAGE_MASK);
+	if (!(pdpt[pdpt_i] & VMM_P)) {
+		uint64_t table = vmm_alloc_table();
 
-    /*
-     * Page Directory
-     */
-    uint64_t pd_i = pd_index(virt);
+		pdpt[pdpt_i] = table | VMM_P | VMM_RW;
 
-    if (!(pd[pd_i] & VMM_P)) {
-        uint64_t table = vmm_alloc_table();
+		if (user)
+			pdpt[pdpt_i] |= VMM_US;
+	} else if (user) {
+		pdpt[pdpt_i] |= VMM_US;
+	}
 
-        pd[pd_i] = table | VMM_P | VMM_RW;
-    }
+	uint64_t *pd =
+		phys_to_virt(pdpt[pdpt_i] & PAGE_MASK);
 
-    uint64_t *pt =
-        phys_to_virt(pd[pd_i] & PAGE_MASK);
+	/*
+	 * Page Directory
+	 */
+	uint64_t pd_i = pd_index(virt);
 
-    /*
-     * Page Table
-     */
-    uint64_t pt_i = pt_index(virt);
+	if (!(pd[pd_i] & VMM_P)) {
+		uint64_t table = vmm_alloc_table();
 
-    if (pt[pt_i] & VMM_P)
-        return false;
+		pd[pd_i] = table | VMM_P | VMM_RW;
 
-    pt[pt_i] = (phys & PAGE_MASK) | flags | VMM_P;
+		if (user)
+			pd[pd_i] |= VMM_US;
+	} else if (user) {
+		pd[pd_i] |= VMM_US;
+	}
 
-    /*
-     * Make the new translation visible.
-     */
-    __asm__ volatile (
-        "invlpg [%0]"
-        :
-        : "r"(virt)
-        : "memory"
-    );
+	uint64_t *pt =
+		phys_to_virt(pd[pd_i] & PAGE_MASK);
 
-    return true;
+	/*
+	 * Page Table
+	 */
+	uint64_t pt_i = pt_index(virt);
+
+	if (pt[pt_i] & VMM_P)
+		return false;
+
+	pt[pt_i] = (phys & PAGE_MASK) | flags | VMM_P;
+
+	/*
+	 * Make the new translation visible.
+	 */
+	__asm__ volatile (
+		"invlpg [%0]"
+		:
+		: "r"(virt)
+		: "memory"
+	);
+
+	return true;
 }
 
 bool vmm_unmap(uint64_t virt) {
@@ -298,7 +315,6 @@ bool vmm_is_page_mapped(uint64_t virt) {
 
 void vmm_init(void) {
     uint64_t cr3 = read_cr3();
-
     printf("VMM: CR3: %lx\n", cr3 & PAGE_MASK);
     printf("VMM: HHDM: %lx\n", krnl.hhdm_offset);
     printf("VMM: initialized\n");

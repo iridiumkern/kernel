@@ -17,8 +17,11 @@
 #include <stdio.h>
 
 #include <sec/random.h>
+#include <string.h>
+#include <debug.h>
 #include <panic.h>
 #include <pmm.h>
+#include <tar.h>
 
 #ifdef __x86_64__
 #include <x86_64/vmm.h>
@@ -43,6 +46,12 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
 __attribute__((used, section(".limine_requests")))
 static volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST_ID,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_module_request module_request = {
+    .id = LIMINE_MODULE_REQUEST_ID,
     .revision = 0
 };
 
@@ -77,6 +86,8 @@ struct flanterm_context *flantermctx = NULL;
 extern void kinit(void);
 extern void print_logo(void);
 extern void sspsetup(void);
+extern uintptr_t tar_init(uintptr_t address);
+extern void jump_usermode(uint64_t ip, uint64_t sp);
 
 void kmain(void) {
     if (!LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision)) {
@@ -161,8 +172,16 @@ void kmain(void) {
         printf("csprng_init returned!\n");
     }
     sspsetup();
-    printf("returned from SSP setup!\n");
 
     parse_acpi();
+
+    uint8_t data[] = {0xeb, 0xfe};
+    #ifdef __x86_64__
+    uint64_t phys = pmm_alloc();
+    vmm_map(0x10000, phys, VMM_P | VMM_US | VMM_RW);
+    memcpy((void*)0x10000, data, 2);
+    hexdump((void*)0x10000, 2);
+    jump_usermode(0x10000, 0x10000 + 4096 - 1);
+    #endif
     hcf();
 }
