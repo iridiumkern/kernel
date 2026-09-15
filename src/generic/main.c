@@ -173,11 +173,6 @@ void kmain(void) {
     sspsetup();
     parse_acpi();
 
-    volatile int a = 10;
-    volatile int b = 0;
-    volatile int c = a / b;
-    (void)c;
-
     // Load userland.tar
     if (module_request.response->module_count != 1) {
         // Kernel should only have one module, a tar file

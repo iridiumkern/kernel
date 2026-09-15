@@ -52,7 +52,9 @@ override CFLAGS += \
 	-fno-lto \
 	-fno-PIC \
 	-ffunction-sections \
-	-fdata-sections \
+	-fdata-sections
+
+override CFLAGS += \
 	-fstack-protector-all \
 	-fsanitize=undefined \
 	-fsanitize-minimal-runtime
