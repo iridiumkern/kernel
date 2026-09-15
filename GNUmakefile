@@ -20,7 +20,7 @@ KERNEL    := $(BUILD)/$(OUTPUT)
 
 LINKER_SCRIPT := $(ARCH_DIR)/linker.lds
 
-CFLAGS    := -g -O0
+CFLAGS    := -g -O2
 LDFLAGS   :=
 
 CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\"
@@ -49,7 +49,6 @@ override CFLAGS += \
 	-std=c99 \
 	-ffreestanding \
 	-fno-stack-check \
-	-fno-lto \
 	-fno-PIC \
 	-ffunction-sections \
 	-fdata-sections
@@ -57,7 +56,22 @@ override CFLAGS += \
 override CFLAGS += \
 	-fstack-protector-all \
 	-fsanitize=undefined \
-	-fsanitize-minimal-runtime
+	-fsanitize-minimal-runtime \
+	-fsanitize=bounds \
+	-fsanitize=object-size \
+	-fsanitize=alignment \
+	-fsanitize=bool \
+	-fsanitize=enum \
+	-fsanitize=shift \
+	-fsanitize=shift-base \
+	-fsanitize=shift-exponent \
+	-fsanitize=integer-divide-by-zero \
+	-fsanitize=unreachable \
+	-fsanitize=return \
+	-fsanitize=nonnull-attribute \
+	-fsanitize=null \
+	-fsanitize=implicit-integer-truncation \
+	-fsanitize=implicit-integer-sign-change
 
 override CPPFLAGS := \
 	-I$(SRC_DIR)/inc \

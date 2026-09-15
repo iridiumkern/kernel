@@ -19,14 +19,14 @@ static volatile struct limine_rsdp_request rsdp_request = {
 };
 
 static int checksum_valid(const void *ptr, size_t len) {
-    const uint8_t *bytes = (const uint8_t *)ptr;
-    uint8_t sum = 0;
+	const uint8_t *bytes = (const uint8_t *)ptr;
+	uint8_t sum = 0;
 
-    for (size_t i = 0; i < len; i++) {
-        sum += bytes[i]; // uint8_t wraps on overflow, which is what we want
-    }
+	for (size_t i = 0; i < len; i++) {
+		sum = (uint8_t)(sum + bytes[i]);
+	}
 
-    return sum == 0;
+	return sum == 0;
 }
 
 bool sdp_valid(const struct RSDP_t *rsdp) {
@@ -35,9 +35,9 @@ bool sdp_valid(const struct RSDP_t *rsdp) {
         return false;
     }
 
-    if (rsdp->Revision >= 2) {
+    if (rsdp->Revision >= (uint8_t)2) {
         const struct XSDP_t *xsdp = (const struct XSDP_t *)rsdp;
-        if (!checksum_valid(xsdp, xsdp->Length)) {
+        if (!checksum_valid(xsdp, (size_t)xsdp->Length)) {
             return false;
         }
     }
@@ -48,10 +48,10 @@ bool sdp_valid(const struct RSDP_t *rsdp) {
 void* spd_pointer = NULL;
 
 bool doChecksum(struct SDT_header *tableHeader) {
-    unsigned char sum = 0;
+    uint8_t sum = 0;
 
     for (uint32_t i = 0; i < tableHeader->Length; i++) {
-        sum += ((char *) tableHeader)[i];
+        sum = (uint8_t)(sum + ((const uint8_t *)tableHeader)[i]);
     }
 
     return sum == 0;
@@ -59,10 +59,10 @@ bool doChecksum(struct SDT_header *tableHeader) {
 
 void *findEntry(const char* name, void *RootSDT) {
     if (krnl.acpi2) {
-        struct XSDT_t *xsdt = (struct XSDT_t *) RootSDT;
-        int entries = (xsdt->h.Length - sizeof(xsdt->h)) / 8;
+        struct XSDT_t *xsdt = (struct XSDT_t *)RootSDT;
+        size_t entries = ((size_t)xsdt->h.Length - sizeof(xsdt->h)) / 8;
 
-        for (int i = 0; i < entries; i++) {
+        for (size_t i = 0; i < entries; i++) {
             struct SDT_header *h = (struct SDT_header *)(xsdt->PointerToOtherSDT[i] + krnl.hhdm_offset);
             if (!memcmp(h->Signature, name, 4))
                 return (void *) h;
@@ -70,10 +70,10 @@ void *findEntry(const char* name, void *RootSDT) {
     } else {
         // ACPI 1.0
         struct RSDT_t *rsdt = (struct RSDT_t *) RootSDT;
-        int entries = (rsdt->h.Length - sizeof(rsdt->h)) / 4;
+        size_t entries = (rsdt->h.Length - sizeof(rsdt->h)) / 4;
 
-        for (int i = 0; i < entries; i++) {
-            struct SDT_header *h = (struct SDT_header *)(uintmax_t)(rsdt->PointerToOtherSDT[i] + krnl.hhdm_offset);
+        for (size_t i = 0; i < entries; i++) {
+            struct SDT_header *h = (struct SDT_header *)(uintmax_t)((uint64_t)rsdt->PointerToOtherSDT[i] + krnl.hhdm_offset);
             if (!memcmp(h->Signature, name, 4))
                 return (void *) h;
         }
