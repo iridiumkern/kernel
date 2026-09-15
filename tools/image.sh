@@ -11,8 +11,8 @@ rm -f "$IMAGE"
 
 mkdir -p "$(dirname "$IMAGE")"
 
-# Create an empty zeroed-out 64 MiB image file.
-dd if=/dev/zero bs=1M count=0 seek=64 of="$IMAGE"
+# Create an empty zeroed-out 256 MiB image file.
+dd if=/dev/zero bs=1M count=0 seek=256 of="$IMAGE"
 
 # Create a partition table.
 PATH="$PATH:/usr/sbin:/sbin" sgdisk "$IMAGE" -n 1:2048 -t 1:ef00 -m 1

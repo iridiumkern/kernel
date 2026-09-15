@@ -13,9 +13,10 @@ __attribute__((noreturn)) void __kpanic(const char *file, const char *func, int 
     flanterm_clear(flantermctx, true);
 
     print_logo();
+    printf("Iridium %s\n", MAJORVER "." MINORVER "-" GIT_HASH " (" GIT_BRANCH ")");
 
     // Print header
-    printf("\n\n*** KERNEL PANIC ***\n");
+    printf("\n*** KERNEL PANIC ***\n");
     printf("%s:%d in %s():\n", file, line, func);
 
     // Print the formatted message

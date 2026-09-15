@@ -1,3 +1,4 @@
+#include <panic.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -10,6 +11,7 @@
 
 #define KHEAP_INITIAL_PAGES 16
 #define KHEAP_GROW_PAGES    16
+#define KHEAP_MAX_PAGES 4096
 
 #define ALIGNMENT 16ULL
 
@@ -22,9 +24,6 @@ typedef struct heap_block {
 } heap_block_t;
 
 static heap_block_t *heap_head = NULL;
-
-static uint64_t heap_start = 0;
-static uint64_t heap_end = 0;
 
 static size_t align_up(size_t value) {
     return (value + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
@@ -78,65 +77,29 @@ static void merge_next(heap_block_t *block) {
         block->next->prev = block;
 }
 
-static bool heap_grow(size_t required) {
-    size_t pages = (required + VMM_PAGE_SIZE - 1) / VMM_PAGE_SIZE;
-
-    if (pages < KHEAP_GROW_PAGES)
-        pages = KHEAP_GROW_PAGES;
-
-    uint64_t phys = pmm_alloc_pages(pages);
-
-    if (!phys)
-        return false;
-
-    uint64_t virt = vmm_find_free_pages(pages, false);
-
-    if (!virt) {
-        pmm_free_pages(phys, pages);
-        return false;
-    }
-
-    vmm_map_pages(
-        virt,
-        phys,
-        pages,
-        VMM_P | VMM_RW | VMM_G
-    );
-
-    heap_block_t *new_block = (heap_block_t *)virt;
-
-    new_block->size =
-        pages * VMM_PAGE_SIZE - sizeof(heap_block_t);
-
-    new_block->free = true;
-    new_block->next = NULL;
-    new_block->prev = NULL;
-
-    if (!heap_head) {
-        heap_head = new_block;
-    } else {
-        heap_block_t *last = heap_head;
-
-        while (last->next)
-            last = last->next;
-
-        last->next = new_block;
-        new_block->prev = last;
-    }
-
-    if (!heap_start || virt < heap_start)
-        heap_start = virt;
-
-    if (virt + pages * VMM_PAGE_SIZE > heap_end)
-        heap_end = virt + pages * VMM_PAGE_SIZE;
-
-    return true;
-}
-
 void kheap_init(void) {
-    heap_head = NULL;
-    heap_start = 0;
-    heap_end = 0;
+	heap_head = NULL;
+
+	size_t pages = KHEAP_MAX_PAGES;
+
+	uint64_t phys = pmm_alloc_pages(pages);
+
+	if (!phys)
+		kpanic("Failed to allocate kernel heap");
+
+	uint64_t virt = vmm_find_free_pages(pages, false);
+
+	if (!virt)
+		kpanic("Failed to reserve kernel heap");
+
+	vmm_map_pages(virt, phys, pages, VMM_P | VMM_RW | VMM_G | VMM_NX);
+
+	heap_head = (heap_block_t *)virt;
+
+	heap_head->size = pages * VMM_PAGE_SIZE - sizeof(heap_block_t);
+	heap_head->free = true;
+	heap_head->next = NULL;
+	heap_head->prev = NULL;
 }
 
 void *kmalloc(size_t size) {
@@ -147,14 +110,10 @@ void *kmalloc(size_t size) {
 
     heap_block_t *block = find_free_block(size);
 
+    // Kernel has OOM errored.
+    // Kernel should start to work overtime here.
     if (!block) {
-        if (!heap_grow(size))
-            return NULL;
-
-        block = find_free_block(size);
-
-        if (!block)
-            return NULL;
+        kpanic("OOM! Kernel Heap size exceeded beyond %llu pages!\n", KHEAP_MAX_PAGES);
     }
 
     split_block(block, size);

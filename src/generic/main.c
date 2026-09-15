@@ -29,8 +29,6 @@
 #include <x86_64/vmm.h>
 #endif
 
-#define VERSION_STRING MAJORVER "." MINORVER "-" GIT_HASH " (" GIT_BRANCH ")"
-
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] =
     LIMINE_BASE_REVISION(6);
@@ -156,7 +154,7 @@ void kmain(void) {
     krnl.hhdm_offset = hhdm_request.response->offset;
 
     print_logo();
-    printf("Iridium %s\n", VERSION_STRING);
+    printf("Iridium %s\n", MAJORVER "." MINORVER "-" GIT_HASH " (" GIT_BRANCH ")");
     printf("Iridium is brought to you under the GPLv3!\n");
     
     kinit();
@@ -173,8 +171,12 @@ void kmain(void) {
         printf("csprng_init returned!\n");
     }
     sspsetup();
-
     parse_acpi();
+
+    volatile int a = 10;
+    volatile int b = 0;
+    volatile int c = a / b;
+    (void)c;
 
     // Load userland.tar
     if (module_request.response->module_count != 1) {
@@ -183,7 +185,9 @@ void kmain(void) {
     }
     tar_init((uintptr_t)(module_request.response->modules[0]->address));
     struct tar_wrapper *usr = tar_getfile("userland/test.bin");
+    // Data of userland/test.bin
     uint8_t *data = (uint8_t*)usr->address;
+
     #ifdef __x86_64__
     uint64_t phys = pmm_alloc();
     vmm_map(0x10000, phys, VMM_P | VMM_US | VMM_RW);

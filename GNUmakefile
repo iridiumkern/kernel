@@ -21,7 +21,6 @@ KERNEL    := $(BUILD)/$(OUTPUT)
 LINKER_SCRIPT := $(ARCH_DIR)/linker.lds
 
 CFLAGS    := -g -O0
-CPPFLAGS  :=
 LDFLAGS   :=
 
 CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\"
@@ -54,7 +53,9 @@ override CFLAGS += \
 	-fno-PIC \
 	-ffunction-sections \
 	-fdata-sections \
-	-fstack-protector-all
+	-fstack-protector-all \
+	-fsanitize=undefined \
+	-fsanitize-minimal-runtime
 
 override CPPFLAGS := \
 	-I$(SRC_DIR)/inc \
@@ -113,6 +114,5 @@ clean:
 
 qemu:
 ifeq ($(ARCH),x86_64)
-	qemu-system-x86_64 -hda $(IMAGE) -serial stdio -bios /usr/share/edk2/OvmfX64/OVMF_CODE.fd
+	qemu-system-x86_64 -hda $(IMAGE) -serial stdio -bios /usr/share/edk2/OvmfX64/OVMF_CODE.fd -m 512M
 endif
-
