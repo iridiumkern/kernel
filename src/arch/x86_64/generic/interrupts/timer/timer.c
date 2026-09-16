@@ -1,3 +1,4 @@
+#include "x86_64/vmm.h"
 #include <x86_64/schedarch.h>
 #include <x86_64/apic.h>
 #include <scheduler.h>
@@ -32,6 +33,7 @@ void lapic_timer_drv(regs_frame_t *frame, fxsave_area_t* fxsave) {
                 regs_thread_state_t *state = (regs_thread_state_t *)next->archdata;
                 memcpy(frame, &state->frame, sizeof(regs_frame_t));
                 memcpy(fxsave, &state->fxsave, sizeof(fxsave_area_t));
+                write_cr3(next->owner->process_paging_struct);
             }
         }
     }

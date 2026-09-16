@@ -216,6 +216,7 @@ thread_t *addthrd(uint64_t pid) {
     thread->enabled = true;
     thread->archdata = NULL;
     thread->next = NULL;
+    thread->owner = proc;
 
     if (proc->threads == NULL) {
         proc->threads = thread;

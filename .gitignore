@@ -3,3 +3,4 @@ build
 serial.log
 docs/
 userland.tar
+*.bin

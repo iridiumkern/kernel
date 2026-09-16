@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <panic.h>
+#include <acpi/madt.h>
 #include <x86_64/io.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -71,7 +74,20 @@ uint32_t ioapic_get_gsi(uint8_t source) {
     return source;
 }
 
-void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lapic_id) {
+void ioapic_route_nmi(uint32_t gsi, uint8_t bsp_lapic_id) {
+    uint32_t index = gsi - gsi_base;
+
+    uint8_t low_reg  = 0x10 + (index * 2);
+    uint8_t high_reg = low_reg + 1;
+
+    // Route to BSP LAPIC.
+    ioapic_write(high_reg, (uint32_t)bsp_lapic_id << 24);
+
+    // NMI delivery, physical destination, edge-triggered, unmasked.
+    ioapic_write(low_reg, 4u << 8);
+}
+
+void ioapic_init(struct madt *madt, uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lapic_id) {
     // Sets up global variables for ioapic related things
     base = ioapic_virtual;
     gsi_base = gsi_base_glb;
@@ -90,6 +106,28 @@ void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lap
 
         // Mask all interrupts from ioapic
         ioapic_write(low_reg, 1u << 16);
+    }
+
+    // Search for an NMI source
+    // Find the first MADT entry
+    struct madt_entry *entry = madt_next(madt, NULL);
+
+    // Parses all entries that the madt parser can find
+    while (entry != NULL) {
+        // If a MADT entry is corrupt we panic
+        // Since if this basic ACPI table is corrupted it is very possible that other tables are broken
+        if (!madt_entry_valid(madt, entry)) {
+            kpanic("MADT entry is invalid!\n");
+        }
+
+        if (entry->type == MADT_TYPE_NMI_SOURCE) {
+            struct madt_nmi_source *nmi = (struct madt_nmi_source*)entry;
+            printf("FOUND NMI!\n");
+            ioapic_route_nmi(nmi->gsi, bsp_lapic_id);
+        }
+
+        // Find the next entry
+        entry = madt_next(madt, entry);
     }
 
     // Maps in the PS/2 keyboard (if it exists, this will crash on some older devices that dont have a PS/2 keyboard)

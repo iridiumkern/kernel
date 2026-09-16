@@ -40,6 +40,7 @@ static bool vectors[IDT_MAX_DESCRIPTORS];
 extern void* isr_stub_table[];
 extern void lapic_timer_stub(void);
 extern void ps2_kbd_stub(void);
+extern void apistub(void);
 
 void idt_init(void) {
     idtr.base = (uintptr_t)&idt[0];
@@ -52,6 +53,7 @@ void idt_init(void) {
 
     idt_set_descriptor(0x20, (void *)lapic_timer_stub, 0x8E);
     idt_set_descriptor(0x21, ps2_kbd_stub, 0x8E);
+    idt_set_descriptor(0x70, apistub, 0xEE); // Ring3 callable
 
     __asm__ volatile ("lidt %0" : : "m"(idtr));
     __asm__ volatile ("sti");

@@ -12,7 +12,7 @@ typedef struct sha512 {
 	uint8_t buffer[128];
 	__uint128_t n_bits;
 	uint8_t buffer_counter;
-} sha512;
+}__attribute__((aligned(16))) sha512;
 
 static inline uint64_t rotr(uint64_t x, int n) {
 	return (x >> n) | (x << (64 - n));
@@ -115,7 +115,7 @@ static void sha512_block(struct sha512 *sha) {
 	state[7] += h;
 }
 
-static void sha512_init(struct sha512 *sha) {
+static __attribute__((optnone)) void sha512_init(struct sha512 *sha) {
 	sha->state[0] = 0x6a09e667f3bcc908ULL;
 	sha->state[1] = 0xbb67ae8584caa73bULL;
 	sha->state[2] = 0x3c6ef372fe94f82bULL;
@@ -177,6 +177,7 @@ static void sha512_finalize_bytes(struct sha512 *sha, void *dst_bytes32) {
 
 void sha512_bytes(const void *src, size_t n_bytes, void *dst_bytes32) {
 	struct sha512 sha;
+
 	sha512_init(&sha);
 	sha512_append(&sha, src, n_bytes);
 	sha512_finalize_bytes(&sha, dst_bytes32);

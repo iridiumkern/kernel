@@ -54,6 +54,7 @@ static const char* decode_exception(uint64_t exception) {
 __attribute__((noreturn)) void exception_handler(struct interrupt_frame *frame) {
     __asm__ volatile ("cli");
 
+    flanterm_set_text_bg(flantermctx, 2, false);
     flanterm_clear(flantermctx, true);
 
     printf("EXCEPTION!\n");
@@ -69,6 +70,12 @@ __attribute__((noreturn)) void exception_handler(struct interrupt_frame *frame) 
     if (frame->exception_code == 14) {
         printf("CR2:       0x%lx\n", read_cr2());
     }
+
+    // Print some advice based on the issue
+    if (frame->exception_code == 2) {
+        printf("An issue occurred with hardware! Please reboot, if this issue persists please bring it to the device manufacturer or troubleshoot the harding causing the NMI.\n");
+    }
+
     printf("\nSystem halted.\n");
 
     for (;;) {

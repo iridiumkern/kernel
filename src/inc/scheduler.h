@@ -18,6 +18,7 @@ typedef struct thread_t {
     bool enabled; // Does the thread function
     void* archdata; // Architecture specific things, registers, the like.
     struct thread_t *next;
+    struct process_t *owner;
 }thread_t;
 
 typedef struct process_t {

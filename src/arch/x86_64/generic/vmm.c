@@ -77,6 +77,10 @@ static inline uint64_t pt_index(uint64_t virt) {
     return (virt >> 12) & 0x1FF;
 }
 
+static void vmm_free_table(uint64_t phys) {
+	pmm_free(phys);
+}
+
 bool vmm_map(uint64_t virt, uint64_t phys, uint64_t flags) {
 	if (virt & (VMM_PAGE_SIZE - 1))
 		return false;
@@ -314,6 +318,74 @@ bool vmm_is_page_mapped(uint64_t virt) {
         return false;
 
     return vmm_get_phys(virt) != 0;
+}
+
+uint64_t vmm_create_address_space(void) {
+	uint64_t new_pml4_phys = vmm_alloc_table();
+
+	uint64_t reference_pml4_phys = reference_cr3 & PAGE_MASK;
+
+	uint64_t *new_pml4 = phys_to_virt(new_pml4_phys);
+	uint64_t *reference_pml4 = phys_to_virt(reference_pml4_phys);
+
+	for (uint64_t i = 256; i < PT_ENTRIES; i++)
+		new_pml4[i] = reference_pml4[i];
+
+	return new_pml4_phys;
+}
+
+bool vmm_destroy_address_space(uint64_t cr3) {
+	uint64_t pml4_phys = cr3 & PAGE_MASK;
+
+	if (!pml4_phys)
+		return false;
+
+	/* Never destroy the reference address space. */
+	if (pml4_phys == (reference_cr3 & PAGE_MASK))
+		return false;
+
+	uint64_t *pml4 = phys_to_virt(pml4_phys);
+
+	/*
+	 * Only the lower 256 PML4 entries belong to this
+	 * address space. The upper 256 are shared with the
+	 * reference address space.
+	 */
+	for (uint64_t pml4_i = 0; pml4_i < 256; pml4_i++) {
+		if (!(pml4[pml4_i] & VMM_P))
+			continue;
+
+		uint64_t pdpt_phys = pml4[pml4_i] & PAGE_MASK;
+		uint64_t *pdpt = phys_to_virt(pdpt_phys);
+
+		for (uint64_t pdpt_i = 0; pdpt_i < PT_ENTRIES; pdpt_i++) {
+			if (!(pdpt[pdpt_i] & VMM_P))
+				continue;
+
+			uint64_t pd_phys = pdpt[pdpt_i] & PAGE_MASK;
+			uint64_t *pd = phys_to_virt(pd_phys);
+
+			for (uint64_t pd_i = 0; pd_i < PT_ENTRIES; pd_i++) {
+				if (!(pd[pd_i] & VMM_P))
+					continue;
+
+				if (pd[pd_i] & VMM_PS)
+					continue;
+
+				uint64_t pt_phys = pd[pd_i] & PAGE_MASK;
+
+				vmm_free_table(pt_phys);
+			}
+
+			vmm_free_table(pd_phys);
+		}
+
+		vmm_free_table(pdpt_phys);
+	}
+
+	vmm_free_table(pml4_phys);
+
+	return true;
 }
 
 void vmm_init(void) {

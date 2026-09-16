@@ -1,6 +1,9 @@
+#include <acpi/madt.h>
 #include <x86_64/io.h>
+#include <panic.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #define LAPIC_ID            0x020
 #define LAPIC_VERSION       0x030
@@ -101,7 +104,7 @@ void lapic_eoi(void) {
     lapic_write(LAPIC_EOI, 0);
 }
 
-void lapic_init(uint64_t lapic_virtual) {
+void lapic_init(struct madt* madt, uint64_t lapic_virtual) {
     lapic = (volatile uint32_t *)lapic_virtual;
 
     printf("LAPIC ID: %x\n", lapic_read(LAPIC_ID) >> 24);
@@ -115,6 +118,40 @@ void lapic_init(uint64_t lapic_virtual) {
     lapic_write(LAPIC_EOI, 0);
 
     apic_start_timer();
+
+    struct madt_entry *entry = madt_next(madt, NULL);
+
+    // Parses all entries that the madt parser can find
+    while (entry != NULL) {
+        // If a MADT entry is corrupt we panic
+        // Since if this basic ACPI table is corrupted it is very possible that other tables are broken
+        if (!madt_entry_valid(madt, entry)) {
+            kpanic("MADT entry is invalid!\n");
+        }
+
+        if (entry->type == MADT_TYPE_LOCAL_NMI) {
+        	struct madt_local_nmi *nmi =
+        		(struct madt_local_nmi *)entry;
+        
+        	printf("FOUND LNMI: processor=%u lint=%u flags=%x\n", nmi->processor_id, nmi->lint, nmi->flags);
+            
+        	uint32_t lvt;
+            
+        	if (nmi->lint == 0) {
+        		lvt = LAPIC_LVT_LINT0;
+        	} else if (nmi->lint == 1) {
+        		lvt = LAPIC_LVT_LINT1;
+        	} else {
+        		kpanic("Invalid LAPIC LINT number!\n");
+        	}
+        
+        	// NMI delivery.
+        	lapic_write(lvt, LAPIC_NMI);
+        }
+
+        // Find the next entry
+        entry = madt_next(madt, entry);
+    }
 
     printf("LAPIC: initialized\n");
 }

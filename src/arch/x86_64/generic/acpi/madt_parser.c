@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <kernel.h>
 
-extern void lapic_init(uint64_t lapic_virtual);
-extern void ioapic_init(uint64_t ioapic_virtual, uint32_t gsi_base, uint8_t bsp_lapic_id);
+extern void lapic_init(struct madt* madt, uint64_t lapic_virtual);
+extern void ioapic_init(struct madt *madt, uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lapic_id);
 extern void ioapic_register_iso(uint8_t source, uint32_t gsi);
 
 acpi_ret madt_parse(struct madt* madt) {
@@ -48,10 +48,10 @@ acpi_ret madt_parse(struct madt* madt) {
                     kpanic("madt->lapicaddr == 0");
                 }
                 // Map the lapic address
-                uint64_t page = vmm_find_free_pages(1, true);
+                uint64_t page = vmm_find_free_pages(1, false);
                 vmm_map(page, madt->lapicaddr, VMM_P | VMM_RW);
 
-                lapic_init(page);
+                lapic_init(madt, page);
             }
         } else if (entry->type == MADT_TYPE_ISO) {
             // Registers an ISO
@@ -63,7 +63,7 @@ acpi_ret madt_parse(struct madt* madt) {
             // Maps the IOAPIC and sets it up
             uint64_t page = vmm_find_free_pages(1, true);
             vmm_map(page, ioapic->address, VMM_P | VMM_RW);
-            ioapic_init(page, ioapic->gsi_base, bsp_apic_id);
+            ioapic_init(madt, page, ioapic->gsi_base, bsp_apic_id);
         }
 
         // Find the next entry

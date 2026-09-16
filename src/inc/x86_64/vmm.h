@@ -101,3 +101,19 @@ void vmm_init(void);
  * @return uint64_t The "base" page, 0 if something failed
  */
 uint64_t vmm_find_free_pages(uint64_t pages, bool user);
+
+/**
+ * @brief Creates a new reference CR3 for userland
+ * 
+ * @return uint64_t The new CR3 phys addr
+ */
+uint64_t vmm_create_address_space(void);
+
+/**
+ * @brief Destroys the userland segment of a CR3
+ * 
+ * @param cr3 The CR3 to break
+ * @return true It worked
+ * @return false It didnt work
+ */
+bool vmm_destroy_address_space(uint64_t cr3);

@@ -9,41 +9,38 @@ extern struct flanterm_context *flantermctx;
 extern void write_serial(char a);
 #endif
 
-static void putstr(const char *s) {
-    flanterm_write(flantermctx, s, __builtin_strlen(s));
-    #ifdef __x86_64__
-    while (*s != '\0') {
-        write_serial(*s++);
-    }
-    #endif
-}
-
 __attribute__((noinline)) void putchar_ft(char c) {
     // Fixes a bug on AARCH64 where referencing &c directly fails
     if (c == '\n') {
         char cr = '\r';
-        flanterm_write(flantermctx, &cr, 1);
+        //flanterm_write(flantermctx, &cr, 1);
         #ifdef __x86_64__
         write_serial(cr);
         #endif
     }
     char buf[1];
     buf[0] = c;
-    flanterm_write(flantermctx, buf, 1);
+    //flanterm_write(flantermctx, buf, 1);
     #ifdef __x86_64__
     write_serial(buf[0]);
     #endif
     if (c == '\b') {
         char cr = ' ';
-        flanterm_write(flantermctx, &cr, 1);
+        //flanterm_write(flantermctx, &cr, 1);
         #ifdef __x86_64__
         write_serial(cr);
         #endif
         cr = '\b';
-        flanterm_write(flantermctx, &cr, 1);
+        //flanterm_write(flantermctx, &cr, 1);
         #ifdef __x86_64__
         write_serial(cr);
         #endif
+    }
+}
+
+static void putstr(const char *s) {
+    while (*s != '\0') {
+        putchar_ft(*s++);
     }
 }
 
