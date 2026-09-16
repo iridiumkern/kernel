@@ -8,8 +8,8 @@ OBJCOPY   := llvm-objcopy
 OUTPUT    := iridium
 GIT_HASH := $(shell git rev-parse --short=7 HEAD)
 GIT_BRANCH := $(shell git branch --show-current)
-MAJOR = 1
-MINOR = 0
+MAJOR = 0
+MINOR = 1
 
 IMAGE := build/$(ARCH)/$(PLATFORM)/$(OUTPUT).hdd
 
