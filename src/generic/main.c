@@ -87,7 +87,8 @@ extern void kinit(void);
 extern void print_logo(void);
 extern void sspsetup(void);
 extern uintptr_t tar_init(uintptr_t address);
-extern void jump_usermode(uint64_t ip, uint64_t sp);
+extern __attribute((noreturn)) void jump_usermode(uint64_t ip, uint64_t sp);
+extern bool setcurthrd(thread_t *thrd);
 
 void kmain(void) {
 	if (!LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision)) {
@@ -183,20 +184,6 @@ void kmain(void) {
 	// Data of userland/test.bin
 	uint8_t *data = (uint8_t*)usr->address;
 
-	#ifdef NISTTEST
-	#define DUMP_SIZE (10ULL * 1024 * 1024)
-	#define CHUNK_SIZE (512ULL * 1024)
-	
-	uint8_t out[CHUNK_SIZE];
-	
-	for (uint64_t i = 0; i < DUMP_SIZE / CHUNK_SIZE; i++) {
-		for (size_t j = 0; j < CHUNK_SIZE; j += 64) {
-			csprng_getrand(out + j);
-		}
-		hexdump(out, sizeof(out));
-	}
-	#endif
-
 	#ifdef __x86_64__
 	uint64_t physcode = pmm_alloc();
 	uint64_t newcr3 = vmm_create_address_space();
@@ -222,6 +209,10 @@ void kmain(void) {
 	thrd->instruction_ptr = 0x10000; 
 	thrd->stack_ptr = virtstck + (4096 * 4);
 	thrd->state = THREAD_RUNNING;
+
+	if (!setcurthrd(thrd)) {
+		kpanic("setcurthrd returned false, attacker attempted to set current thread!\n");
+	}
 
 	jump_usermode(thrd->instruction_ptr, thrd->stack_ptr);
 	#endif

@@ -3,4 +3,5 @@ build
 serial.log
 docs/
 userland.tar
+compile_commands.json
 *.bin

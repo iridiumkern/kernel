@@ -8,6 +8,7 @@ static process_t *rootproc = NULL;
 static process_t *nextproc = NULL;
 static thread_t *current_thread = NULL;
 
+static bool setcurthrdillg = false;
 static uint64_t pid_counter = 0;
 static uint64_t tid_counter = 0;
 static uint64_t taskcount = 0;
@@ -31,6 +32,16 @@ static process_t *findproc(uint64_t pid) {
     }
 
     return NULL;
+}
+
+bool setcurthrd(thread_t *thrd) {
+    if (setcurthrdillg) {
+        // Setting current thread is illegal, return false.
+        return false;
+    }
+    current_thread = thrd;
+    setcurthrdillg = true;
+    return true;
 }
 
 static thread_t *findthrd(process_t *proc, uint64_t tid) {

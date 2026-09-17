@@ -51,9 +51,13 @@ static const char* decode_exception(uint64_t exception) {
     }
 }
 
-__attribute__((noreturn)) void exception_handler(struct interrupt_frame *frame) {
-    __asm__ volatile ("cli");
-
+void exception_handler(struct interrupt_frame *frame) {
+    __asm("cli");
+    if (frame->exception_code == 1) {
+        // Debug, returns for now
+        __asm("sti");
+        return;
+    }
     flanterm_set_text_bg(flantermctx, 2, false);
     flanterm_clear(flantermctx, true);
 
@@ -79,7 +83,7 @@ __attribute__((noreturn)) void exception_handler(struct interrupt_frame *frame) 
     printf("\nSystem halted.\n");
 
     for (;;) {
-        __asm__ volatile ("hlt");
+        __asm("hlt");
     }
 
     __builtin_unreachable();

@@ -51,7 +51,9 @@ override CFLAGS += \
 	-fno-stack-check \
 	-fno-PIC \
 	-ffunction-sections \
-	-fdata-sections
+	-fdata-sections \
+	-flto \
+	-fvisibility=default
 
 override CFLAGS += \
 	-fstack-protector-all \
@@ -71,7 +73,8 @@ override CFLAGS += \
 	-fsanitize=nonnull-attribute \
 	-fsanitize=null \
 	-fsanitize=implicit-integer-truncation \
-	-fsanitize=implicit-integer-sign-change
+	-fsanitize=implicit-integer-sign-change \
+	-fsanitize=cfi
 
 override CPPFLAGS := \
 	-I$(SRC_DIR)/inc \
