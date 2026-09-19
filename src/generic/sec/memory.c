@@ -29,3 +29,23 @@ bool range_is_mapped(uintptr_t start, uintptr_t size) {
     return false;
     #endif
 }
+
+bool range_is_user(uintptr_t start, uintptr_t size) {
+    #ifdef __x86_64__
+    if (size == 0)
+        return true;
+
+    uintptr_t first = align_down(start, 0x1000);
+    uintptr_t last  = align_down(start + size - 1, 0x1000);
+
+    for (uintptr_t page = first; page <= last; page += 0x1000) {
+        if (!vmm_page_has_attrs(page, VMM_US)) return false;
+    }
+
+    return true;
+    #else
+    (void)start;
+    (void)end;
+    return false;
+    #endif
+}

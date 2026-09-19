@@ -320,6 +320,55 @@ bool vmm_is_page_mapped(uint64_t virt) {
     return vmm_get_phys(virt) != 0;
 }
 
+bool vmm_page_has_attrs(uint64_t virt, uint64_t attrs) {
+    if (virt & (PAGE_SIZE - 1)) return false;
+
+    uint64_t cr3 = read_cr3();
+    uint64_t pml4_phys = cr3 & PAGE_MASK;
+
+    uint64_t *pml4 = phys_to_virt(pml4_phys);
+
+    uint64_t pml4_i = pml4_index(virt);
+
+    if (!(pml4[pml4_i] & VMM_P)) return false;
+
+    uint64_t pml4e = pml4[pml4_i];
+
+    uint64_t *pdpt = phys_to_virt(pml4e & PAGE_MASK);
+
+    uint64_t pdpt_i = pdpt_index(virt);
+
+    if (!(pdpt[pdpt_i] & VMM_P)) return false;
+
+    uint64_t pdpte = pdpt[pdpt_i];
+
+    uint64_t *pd = phys_to_virt(pdpte & PAGE_MASK);
+
+    uint64_t pd_i = pd_index(virt);
+
+    if (!(pd[pd_i] & VMM_P)) return false;
+
+    uint64_t pde = pd[pd_i];
+
+    if (pde & VMM_PS) {
+        uint64_t effective = pml4e & pdpte & pde;
+
+        return (effective & attrs) == attrs;
+    }
+
+    uint64_t *pt = phys_to_virt(pde & PAGE_MASK);
+
+    uint64_t pt_i = pt_index(virt);
+
+    if (!(pt[pt_i] & VMM_P)) return false;
+
+    uint64_t pte = pt[pt_i];
+
+    uint64_t effective = pml4e & pdpte & pde & pte;
+
+    return (effective & attrs) == attrs;
+}
+
 uint64_t vmm_create_address_space(void) {
 	uint64_t new_pml4_phys = vmm_alloc_table();
 

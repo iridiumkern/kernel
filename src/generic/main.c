@@ -180,7 +180,7 @@ void kmain(void) {
 		kpanic("Passed more than one file! Only file should be userland.tar!\n");
 	}
 	tar_init((uintptr_t)(module_request.response->modules[0]->address));
-	struct tar_wrapper *usr = tar_getfile("userland/test.bin");
+	struct tar_wrapper *usr = tar_getfile("userland/pid0.bin");
 	// Data of userland/test.bin
 	uint8_t *data = (uint8_t*)usr->address;
 

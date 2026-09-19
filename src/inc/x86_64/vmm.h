@@ -117,3 +117,13 @@ uint64_t vmm_create_address_space(void);
  * @return false It didnt work
  */
 bool vmm_destroy_address_space(uint64_t cr3);
+
+/**
+ * @brief Checks if a page has attributes
+ * 
+ * @param virt The address
+ * @param attrs The attrs
+ * @return true Has all of them
+ * @return false Lacks at least one of them
+ */
+bool vmm_page_has_attrs(uint64_t virt, uint64_t attrs);

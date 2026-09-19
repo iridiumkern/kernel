@@ -38,8 +38,8 @@ mmd -i "$IMAGE@@1M" \
 	::/boot \
 	::/boot/limine
 
-nasm -fbin userland/testapp.asm -o userland/test.bin
-tar -cf userland.tar userland/test.bin
+nasm -fbin userland/testapp.asm -o userland/pid0.bin
+tar -cf userland.tar userland/pid0.bin
 
 # Copy kernel and Limine files.
 mcopy -i "$IMAGE@@1M" "$KERNEL" ::/boot
