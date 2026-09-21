@@ -100,51 +100,9 @@ void kmain(void) {
 		hcf();
 	}
 
-	struct limine_framebuffer *framebuffer =
-		framebuffer_request.response->framebuffers[0];
+	struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
-	flantermctx = flanterm_fb_init(
-		NULL,
-		NULL,
-
-		(uint32_t *)framebuffer->address,
-		framebuffer->width,
-		framebuffer->height,
-		framebuffer->pitch,
-
-		framebuffer->red_mask_size,
-		framebuffer->red_mask_shift,
-
-		framebuffer->green_mask_size,
-		framebuffer->green_mask_shift,
-
-		framebuffer->blue_mask_size,
-		framebuffer->blue_mask_shift,
-
-		NULL, /* canvas */
-
-		NULL, /* ANSI colours */
-		NULL, /* ANSI bright colours */
-
-		NULL, /* default background */
-		NULL, /* default foreground */
-		NULL, /* bright background */
-		NULL, /* bright foreground */
-
-		NULL, /* font */
-		0,    /* font width */
-		0,    /* font height */
-		0,    /* font spacing */
-
-		0,    /* font scale X */
-		0,    /* font scale Y */
-
-		0,    /* margin */
-
-		FLANTERM_FB_ROTATE_0,
-
-		true  /* autoflush */
-	);
+	flantermctx = flanterm_fb_init(NULL, NULL, (uint32_t *)framebuffer->address, framebuffer->width, framebuffer->height, framebuffer->pitch, framebuffer->red_mask_size, framebuffer->red_mask_shift, framebuffer->green_mask_size, framebuffer->green_mask_shift, framebuffer->blue_mask_size, framebuffer->blue_mask_shift, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, FLANTERM_FB_ROTATE_0, true);
 
 	if (flantermctx == NULL) {
 		hcf();
@@ -168,9 +126,8 @@ void kmain(void) {
 	
 	if (!csprng_init()) {
 		kpanic("CSPRNG_INIT FAILED!\n");
-	} else {
-		printf("csprng_init returned!\n");
 	}
+
 	sspsetup();
 	parse_acpi();
 
@@ -181,7 +138,6 @@ void kmain(void) {
 	}
 	tar_init((uintptr_t)(module_request.response->modules[0]->address));
 	struct tar_wrapper *usr = tar_getfile("userland/pid0.bin");
-	// Data of userland/test.bin
 	uint8_t *data = (uint8_t*)usr->address;
 
 	#ifdef __x86_64__
@@ -206,12 +162,12 @@ void kmain(void) {
 	proc->process_paging_struct = newcr3;
 	thread_t *thrd = addthrd(proc->pid);
 	thrd->archdata = kmalloc(sizeof(regs_thread_state_t));
-	thrd->instruction_ptr = 0x10000; 
+	thrd->instruction_ptr = 0x10000;
 	thrd->stack_ptr = virtstck + (4096 * 4);
 	thrd->state = THREAD_RUNNING;
 
 	if (!setcurthrd(thrd)) {
-		kpanic("setcurthrd returned false, attacker attempted to set current thread!\n");
+		kpanic("Failed to set current thread!\n");
 	}
 
 	jump_usermode(thrd->instruction_ptr, thrd->stack_ptr);
