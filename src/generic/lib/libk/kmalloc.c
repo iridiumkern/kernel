@@ -9,7 +9,7 @@
 #endif
 #include <stdlib.h>
 
-#define KHEAP_INITIAL_PAGES 16
+#define heap_initIAL_PAGES 16
 #define KHEAP_GROW_PAGES    16
 #define KHEAP_MAX_PAGES 4096
 
@@ -77,7 +77,7 @@ static void merge_next(heap_block_t *block) {
         block->next->prev = block;
 }
 
-void kheap_init(void) {
+void heap_init(void) {
 	heap_head = NULL;
 
 	size_t pages = KHEAP_MAX_PAGES;
@@ -102,7 +102,7 @@ void kheap_init(void) {
 	heap_head->prev = NULL;
 }
 
-void *kmalloc(size_t size) {
+void *malloc(size_t size) {
     if (size == 0)
         return NULL;
 
@@ -123,7 +123,7 @@ void *kmalloc(size_t size) {
     return (void *)(block + 1);
 }
 
-void kfree(void *ptr) {
+void free(void *ptr) {
     if (!ptr)
         return;
 

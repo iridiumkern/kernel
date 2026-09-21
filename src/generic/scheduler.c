@@ -130,7 +130,7 @@ thread_t *get_current_thread(void) {
 }
 
 process_t *addproc(void) {
-    process_t *proc = kmalloc(sizeof(process_t));
+    process_t *proc = malloc(sizeof(process_t));
 
     if (proc == NULL)
         return NULL;
@@ -184,14 +184,14 @@ bool delproc(uint64_t pid) {
                 thread_t *next = thread->next;
 
                 if (thread->archdata != NULL)
-                    kfree(thread->archdata);
+                    free(thread->archdata);
 
-                kfree(thread);
+                free(thread);
 
                 thread = next;
             }
 
-            kfree(proc);
+            free(proc);
 
             taskcount--;
 
@@ -214,7 +214,7 @@ thread_t *addthrd(uint64_t pid) {
     if (proc == NULL)
         return NULL;
 
-    thread_t *thread = kmalloc(sizeof(thread_t));
+    thread_t *thread = malloc(sizeof(thread_t));
 
     if (thread == NULL)
         return NULL;
@@ -272,9 +272,9 @@ bool delthrd(uint64_t pid, uint64_t tid) {
                 prev->next = thread->next;
 
             if (thread->archdata != NULL)
-                kfree(thread->archdata);
+                free(thread->archdata);
 
-            kfree(thread);
+            free(thread);
 
             if (proc->threads == NULL)
                 proc->nexthread = 0;

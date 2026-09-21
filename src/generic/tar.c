@@ -20,10 +20,10 @@ uintptr_t getsize(const char *in) {
 
 uintptr_t tar_init(uintptr_t address) {
     unsigned int i;
-    rootentry = kmalloc(sizeof(struct tar_wrapper));
+    rootentry = malloc(sizeof(struct tar_wrapper));
 
     if (rootentry == NULL) {
-        kpanic("KMALLOC OOM!\n");
+        kpanic("malloc OOM!\n");
     }
 
     struct tar_wrapper *next = rootentry;
@@ -41,7 +41,7 @@ uintptr_t tar_init(uintptr_t address) {
         next->address = address + 512;
         
         address += 512 + blocks * 512;
-        next->next = kmalloc(sizeof(struct tar_wrapper));
+        next->next = malloc(sizeof(struct tar_wrapper));
 
         if (next->next == NULL) break;
 
