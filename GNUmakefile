@@ -133,5 +133,5 @@ clean:
 
 qemu:
 ifeq ($(ARCH),x86_64)
-	qemu-system-x86_64 -hda $(IMAGE) -serial file:serial.log -bios /usr/share/edk2/OvmfX64/OVMF_CODE.fd -m 512M
+	qemu-system-x86_64 -hda $(IMAGE) -serial file:serial.log -bios /usr/share/edk2/OvmfX64/OVMF_CODE.fd -m 512M -monitor stdio
 endif

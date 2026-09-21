@@ -35,12 +35,23 @@ bool csprng_addentropy(void* data, uint64_t size) {
     if (!range_is_mapped((uintptr_t)data, size)) return false;
     // Hash the data
     uint64_t hasheddata[8] = {0};
+    uint64_t newstate[8] = {0};
     sha512_bytes(data, size, (void*)&hasheddata);
 
     // Mix the hashed data with the current state
     for (int i = 0; i < 8; i++) {
-        state[i] = state[i] ^ hasheddata[i];
+        uint64_t extra_entropy = 0;
+        if (!random_u64(&extra_entropy)) {
+            memset(newstate, 0, 64);
+            memset(hasheddata, 0, 64);
+            extra_entropy = 0;
+            return false;
+        }
+        newstate[i] = state[i] ^ hasheddata[i] ^ extra_entropy;
+        extra_entropy = 0;
     }
+    memcpy(state, newstate, 64);
+    memset(newstate, 0, 64);
     memset(hasheddata, 0, 64);
     return true;
 }

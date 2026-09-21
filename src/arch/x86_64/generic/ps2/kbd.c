@@ -120,8 +120,7 @@ void ps2_kbd_drv(void) {
     }
 
     char c = decode_scancode(scancode);
-    if (c)
-        printf("%c", c);
+    if (c) putchar_ft(c);
 
     lapic_eoi();
 }
