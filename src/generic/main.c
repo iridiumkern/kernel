@@ -16,6 +16,7 @@
 #include <limine.h>
 #include <stdio.h>
 
+#include "sec/crypto/sss/sss.h"
 #include <sec/random.h>
 #include <scheduler.h>
 #include <string.h>
@@ -122,7 +123,7 @@ void kmain(void) {
 	vmm_init();
 	#endif
 
-	kheap_init();
+	heap_init();
 	
 	if (!csprng_init()) {
 		kpanic("CSPRNG_INIT FAILED!\n");
@@ -130,6 +131,8 @@ void kmain(void) {
 
 	sspsetup();
 	parse_acpi();
+
+	sss_debug_test();
 
 	// Load userland.tar
 	if (module_request.response->module_count != 1) {
@@ -161,7 +164,7 @@ void kmain(void) {
 	}
 	proc->process_paging_struct = newcr3;
 	thread_t *thrd = addthrd(proc->pid);
-	thrd->archdata = kmalloc(sizeof(regs_thread_state_t));
+	thrd->archdata = malloc(sizeof(regs_thread_state_t));
 	thrd->instruction_ptr = 0x10000;
 	thrd->stack_ptr = virtstck + (4096 * 4);
 	thrd->state = THREAD_RUNNING;

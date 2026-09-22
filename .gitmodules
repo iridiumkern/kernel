@@ -1,3 +1,6 @@
 [submodule "src/generic/lib/flanterm"]
 	path = src/generic/lib/flanterm
 	url = https://github.com/Mintsuki/Flanterm
+[submodule "src/generic/sec/crypto/sss"]
+	path = src/generic/sec/crypto/sss
+	url = https://github.com/iridiumkern/SSS

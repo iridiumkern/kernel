@@ -20,7 +20,7 @@ KERNEL    := $(BUILD)/$(OUTPUT)
 
 LINKER_SCRIPT := $(ARCH_DIR)/linker.lds
 
-CFLAGS    := -g -O2
+CFLAGS    := -g -O3
 LDFLAGS   :=
 
 CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\"
