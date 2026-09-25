@@ -15,5 +15,6 @@ __attribute__((no_stack_protector)) bool sspsetup(void) {
 }
 
 __attribute__((noreturn)) void __stack_chk_fail(void) {
-    kpanic("SSP triggered!\n");
+    uintptr_t rip = (uintptr_t)__builtin_return_address(0);
+    kpanic("SSP triggered at %p!\n", rip);
 }
