@@ -252,9 +252,6 @@ uint64_t vmm_get_phys(uint64_t virt) {
     if (!(pd[pd_i] & VMM_P))
 	return 0;
 
-    /*
-     * We aren't supporting 2MiB/1GB pages yet.
-     */
     if (pd[pd_i] & VMM_PS)
 	return (pd[pd_i] & 0x000FFFFFFFE00000ULL) | (virt & 0x1FFFFFULL);
 
@@ -269,12 +266,20 @@ uint64_t vmm_get_phys(uint64_t virt) {
 	   (virt & 0xFFF);
 }
 
-void vmm_map_pages(uint64_t virt, uint64_t phys, uint64_t pages, uint64_t flags) {
+bool vmm_map_pages(uint64_t virt, uint64_t phys, uint64_t pages, uint64_t flags) {
     for (uint64_t i = 0; i < pages; i++) {
-	if (!vmm_map(virt + (i * PAGE_SIZE), phys + (i * PAGE_SIZE), flags)) {
-	    kpanic("VMM: failed to map page\n");
-	}
+        if (!vmm_map(virt + (i * PAGE_SIZE), phys + (i * PAGE_SIZE), flags)) {
+            // Undo all previously mapped pages (i - 1 down to 0)
+            while (i > 0) {
+                i--;
+                if (!vmm_unmap(virt + (i * PAGE_SIZE))) {
+                    kpanic("vmm_map_pages failed to unwind during failure recovery!\n");
+                }
+            }
+            return false;
+        }
     }
+    return true;
 }
 
 bool vmm_free_pages(uint64_t virt, uint64_t pages) {

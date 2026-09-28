@@ -65,8 +65,10 @@ uint64_t vmm_get_phys(uint64_t virt);
  * @param phys The "base" physical page
  * @param pages The amount of pages to map
  * @param flags The flags for every page
+ * @return true Mapped all pages correctly 
+ * @return false Failed to map pages, it unwinded attempted mappings
  */
-void vmm_map_pages(uint64_t virt, uint64_t phys, uint64_t pages, uint64_t flags);
+bool vmm_map_pages(uint64_t virt, uint64_t phys, uint64_t pages, uint64_t flags);
 
 /**
  * @brief Unmap/free pages.
