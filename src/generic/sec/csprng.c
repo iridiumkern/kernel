@@ -31,15 +31,15 @@ bool csprng_addentropy(void* data, uint64_t size) {
 
     // Mix the hashed data with the current state
     for (int i = 0; i < 8; i++) {
-        uint64_t extra_entropy = 0;
-        if (!random_u64(&extra_entropy)) {
-            memset(newstate, 0, 64);
-            memset(hasheddata, 0, 64);
-            extra_entropy = 0;
-            return false;
-        }
-        newstate[i] = state[i] ^ hasheddata[i] ^ extra_entropy;
-        extra_entropy = 0;
+	uint64_t extra_entropy = 0;
+	if (!random_u64(&extra_entropy)) {
+	    memset(newstate, 0, 64);
+	    memset(hasheddata, 0, 64);
+	    extra_entropy = 0;
+	    return false;
+	}
+	newstate[i] = state[i] ^ hasheddata[i] ^ extra_entropy;
+	extra_entropy = 0;
     }
     memcpy(state, newstate, 64);
     memset(newstate, 0, 64);
@@ -60,17 +60,17 @@ bool csprng_getrand(uint8_t *out) {
     // Add some extra entropy
     uint64_t tmpbuf;
     if (!random_u64(&tmpbuf)) {
-        memset(output, 0, 64);
-        memset(newstate, 0, 64);
-        return false;
+	memset(output, 0, 64);
+	memset(newstate, 0, 64);
+	return false;
     }
 
     // Copy the new state and then add in entropy
     memcpy(state, newstate, 64);
     if (!csprng_addentropy(&tmpbuf, 8)) {
-        memset(output, 0, 64);
-        memset(newstate, 0, 64);
-        return false;
+	memset(output, 0, 64);
+	memset(newstate, 0, 64);
+	return false;
     }
     // Zero the state from the stack
     memcpy(out, output, 64);

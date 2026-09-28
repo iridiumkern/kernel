@@ -6,26 +6,26 @@
 #include <acpi/types.h>
 
 #define MADT_TYPE_LOCAL_APIC       0
-#define MADT_TYPE_IO_APIC          1
-#define MADT_TYPE_ISO              2
+#define MADT_TYPE_IO_APIC	  1
+#define MADT_TYPE_ISO	      2
 #define MADT_TYPE_NMI_SOURCE       3
-#define MADT_TYPE_LOCAL_NMI        4
+#define MADT_TYPE_LOCAL_NMI	4
 #define MADT_TYPE_LAPIC_OVERRIDE   5
-#define MADT_TYPE_X2APIC           9
+#define MADT_TYPE_X2APIC	   9
 
-#define MADT_CPU_ENABLED           (1u << 0)
+#define MADT_CPU_ENABLED	   (1u << 0)
 #define MADT_CPU_ONLINE_CAPABLE    (1u << 1)
 
-#define MADT_POLARITY_MASK         0x3
-#define MADT_TRIGGER_MASK          0xC
+#define MADT_POLARITY_MASK	 0x3
+#define MADT_TRIGGER_MASK	  0xC
 
 #define MADT_POLARITY_DEFAULT      0x0
-#define MADT_POLARITY_HIGH         0x1
-#define MADT_POLARITY_LOW          0x3
+#define MADT_POLARITY_HIGH	 0x1
+#define MADT_POLARITY_LOW	  0x3
 
 #define MADT_TRIGGER_DEFAULT       0x0
-#define MADT_TRIGGER_EDGE          0x4
-#define MADT_TRIGGER_LEVEL         0xC
+#define MADT_TRIGGER_EDGE	  0x4
+#define MADT_TRIGGER_LEVEL	 0xC
 
 struct madt {
     struct SDT_header h;

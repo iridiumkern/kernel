@@ -23,36 +23,36 @@ SECTIONS {
 
     /* Define a section to contain the Limine requests and assign it to its own PHDR */
     .limine_requests : {
-        KEEP(*(.limine_requests_start))
-        KEEP(*(.limine_requests))
-        KEEP(*(.limine_requests_end))
+	KEEP(*(.limine_requests_start))
+	KEEP(*(.limine_requests))
+	KEEP(*(.limine_requests_end))
     } :limine_requests
 
     /* Move to the next memory page for .text */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     .text : {
-        *(.text .text.*)
+	*(.text .text.*)
     } :text
 
     /* Move to the next memory page for .rodata */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     .rodata : {
-        *(.rodata .rodata.*)
+	*(.rodata .rodata.*)
     } :rodata
 
     /* Add a .note.gnu.build-id output section in case a build ID flag is added to the */
     /* linker command. */
     .note.gnu.build-id : {
-        *(.note.gnu.build-id)
+	*(.note.gnu.build-id)
     } :rodata
 
     /* Move to the next memory page for .data */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     .data : {
-        *(.data .data.*)
+	*(.data .data.*)
     } :data
 
     /* NOTE: .bss needs to be the last thing mapped to :data, otherwise lots of */
@@ -60,13 +60,13 @@ SECTIONS {
     /* If you need, for example, .init_array and .fini_array, those should be placed */
     /* above this. */
     .bss : {
-        *(.bss .bss.*)
-        *(COMMON)
+	*(.bss .bss.*)
+	*(COMMON)
     } :data
 
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
-        *(.eh_frame*)
-        *(.note .note.*)
+	*(.eh_frame*)
+	*(.note .note.*)
     }
 }

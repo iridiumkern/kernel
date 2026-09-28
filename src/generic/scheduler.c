@@ -25,10 +25,10 @@ static process_t *findproc(uint64_t pid) {
     process_t *proc = rootproc;
 
     while (proc != NULL) {
-        if (proc->pid == pid)
-            return proc;
+	if (proc->pid == pid)
+	    return proc;
 
-        proc = proc->next;
+	proc = proc->next;
     }
 
     return NULL;
@@ -36,8 +36,8 @@ static process_t *findproc(uint64_t pid) {
 
 bool setcurthrd(thread_t *thrd) {
     if (setcurthrdillg) {
-        // Setting current thread is illegal, return false.
-        return false;
+	// Setting current thread is illegal, return false.
+	return false;
     }
     current_thread = thrd;
     setcurthrdillg = true;
@@ -48,10 +48,10 @@ static thread_t *findthrd(process_t *proc, uint64_t tid) {
     thread_t *thread = proc->threads;
 
     while (thread != NULL) {
-        if (thread->tid == tid)
-            return thread;
+	if (thread->tid == tid)
+	    return thread;
 
-        thread = thread->next;
+	thread = thread->next;
     }
 
     return NULL;
@@ -59,66 +59,66 @@ static thread_t *findthrd(process_t *proc, uint64_t tid) {
 
 thread_t *schedule(void) {
     if (rootproc == NULL)
-        return NULL;
+	return NULL;
 
     if (current_thread != NULL &&
-        current_thread->state == THREAD_RUNNING) {
-        current_thread->state = THREAD_READY;
+	current_thread->state == THREAD_RUNNING) {
+	current_thread->state = THREAD_READY;
     }
 
     process_t *proc = nextproc;
 
     if (proc == NULL)
-        proc = rootproc;
+	proc = rootproc;
 
     process_t *start = proc;
 
     while (proc != NULL) {
-        if (proc->threads != NULL) {
-            thread_t *thread = findthrd(proc, proc->nexthread);
+	if (proc->threads != NULL) {
+	    thread_t *thread = findthrd(proc, proc->nexthread);
 
-            if (thread == NULL)
-                thread = proc->threads;
+	    if (thread == NULL)
+		thread = proc->threads;
 
-            thread_t *startthread = thread;
+	    thread_t *startthread = thread;
 
-            while (thread != NULL) {
-                if (thread->enabled &&
-                    thread->state == THREAD_READY) {
+	    while (thread != NULL) {
+		if (thread->enabled &&
+		    thread->state == THREAD_READY) {
 
-                    if (thread->next != NULL)
-                        proc->nexthread = thread->next->tid;
-                    else
-                        proc->nexthread = proc->threads->tid;
+		    if (thread->next != NULL)
+			proc->nexthread = thread->next->tid;
+		    else
+			proc->nexthread = proc->threads->tid;
 
-                    nextproc = proc->next;
+		    nextproc = proc->next;
 
-                    if (nextproc == NULL)
-                        nextproc = rootproc;
+		    if (nextproc == NULL)
+			nextproc = rootproc;
 
-                    thread->state = THREAD_RUNNING;
-                    current_thread = thread;
+		    thread->state = THREAD_RUNNING;
+		    current_thread = thread;
 
-                    return thread;
-                }
+		    return thread;
+		}
 
-                thread = thread->next;
+		thread = thread->next;
 
-                if (thread == NULL)
-                    thread = proc->threads;
+		if (thread == NULL)
+		    thread = proc->threads;
 
-                if (thread == startthread)
-                    break;
-            }
-        }
+		if (thread == startthread)
+		    break;
+	    }
+	}
 
-        proc = proc->next;
+	proc = proc->next;
 
-        if (proc == NULL)
-            proc = rootproc;
+	if (proc == NULL)
+	    proc = rootproc;
 
-        if (proc == start)
-            break;
+	if (proc == start)
+	    break;
     }
 
     current_thread = NULL;
@@ -133,7 +133,7 @@ process_t *addproc(void) {
     process_t *proc = malloc(sizeof(process_t));
 
     if (proc == NULL)
-        return NULL;
+	return NULL;
 
     proc->pid = getpid();
     proc->nexthread = 0;
@@ -141,17 +141,17 @@ process_t *addproc(void) {
     proc->next = NULL;
 
     if (rootproc == NULL) {
-        rootproc = proc;
-        nextproc = proc;
-        taskcount++;
+	rootproc = proc;
+	nextproc = proc;
+	taskcount++;
 
-        return proc;
+	return proc;
     }
 
     process_t *last = rootproc;
 
     while (last->next != NULL)
-        last = last->next;
+	last = last->next;
 
     last->next = proc;
 
@@ -165,44 +165,44 @@ bool delproc(uint64_t pid) {
     process_t *prev = NULL;
 
     while (proc != NULL) {
-        if (proc->pid == pid) {
-            if (prev == NULL)
-                rootproc = proc->next;
-            else
-                prev->next = proc->next;
+	if (proc->pid == pid) {
+	    if (prev == NULL)
+		rootproc = proc->next;
+	    else
+		prev->next = proc->next;
 
-            if (nextproc == proc) {
-                nextproc = proc->next;
+	    if (nextproc == proc) {
+		nextproc = proc->next;
 
-                if (nextproc == NULL)
-                    nextproc = rootproc;
-            }
+		if (nextproc == NULL)
+		    nextproc = rootproc;
+	    }
 
-            thread_t *thread = proc->threads;
+	    thread_t *thread = proc->threads;
 
-            while (thread != NULL) {
-                thread_t *next = thread->next;
+	    while (thread != NULL) {
+		thread_t *next = thread->next;
 
-                if (thread->archdata != NULL)
-                    free(thread->archdata);
+		if (thread->archdata != NULL)
+		    free(thread->archdata);
 
-                free(thread);
+		free(thread);
 
-                thread = next;
-            }
+		thread = next;
+	    }
 
-            free(proc);
+	    free(proc);
 
-            taskcount--;
+	    taskcount--;
 
-            if (taskcount == 0)
-                nextproc = NULL;
+	    if (taskcount == 0)
+		nextproc = NULL;
 
-            return true;
-        }
+	    return true;
+	}
 
-        prev = proc;
-        proc = proc->next;
+	prev = proc;
+	proc = proc->next;
     }
 
     return false;
@@ -212,12 +212,12 @@ thread_t *addthrd(uint64_t pid) {
     process_t *proc = findproc(pid);
 
     if (proc == NULL)
-        return NULL;
+	return NULL;
 
     thread_t *thread = malloc(sizeof(thread_t));
 
     if (thread == NULL)
-        return NULL;
+	return NULL;
 
     // Set to THREAD_BLOCKED so the kernel can set it up and get it ready before its ran
     thread->state = THREAD_BLOCKED;
@@ -230,16 +230,16 @@ thread_t *addthrd(uint64_t pid) {
     thread->owner = proc;
 
     if (proc->threads == NULL) {
-        proc->threads = thread;
-        proc->nexthread = thread->tid;
+	proc->threads = thread;
+	proc->nexthread = thread->tid;
 
-        return thread;
+	return thread;
     }
 
     thread_t *last = proc->threads;
 
     while (last->next != NULL)
-        last = last->next;
+	last = last->next;
 
     last->next = thread;
 
@@ -255,35 +255,35 @@ bool delthrd(uint64_t pid, uint64_t tid) {
     thread_t *prev = NULL;
 
     while (thread != NULL) {
-        if (thread->tid == tid) {
+	if (thread->tid == tid) {
 
-            if (proc->nexthread == tid) {
-                if (thread->next != NULL)
-                    proc->nexthread = thread->next->tid;
-                else if (prev != NULL)
-                    proc->nexthread = prev->tid;
-                else
-                    proc->nexthread = 0;
-            }
+	    if (proc->nexthread == tid) {
+		if (thread->next != NULL)
+		    proc->nexthread = thread->next->tid;
+		else if (prev != NULL)
+		    proc->nexthread = prev->tid;
+		else
+		    proc->nexthread = 0;
+	    }
 
-            if (prev == NULL)
-                proc->threads = thread->next;
-            else
-                prev->next = thread->next;
+	    if (prev == NULL)
+		proc->threads = thread->next;
+	    else
+		prev->next = thread->next;
 
-            if (thread->archdata != NULL)
-                free(thread->archdata);
+	    if (thread->archdata != NULL)
+		free(thread->archdata);
 
-            free(thread);
+	    free(thread);
 
-            if (proc->threads == NULL)
-                proc->nexthread = 0;
+	    if (proc->threads == NULL)
+		proc->nexthread = 0;
 
-            return true;
-        }
+	    return true;
+	}
 
-        prev = thread;
-        thread = thread->next;
+	prev = thread;
+	thread = thread->next;
     }
 
     return false;

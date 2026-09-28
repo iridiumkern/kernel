@@ -10,15 +10,15 @@ struct madt_entry *madt_next(struct madt *madt, struct madt_entry *entry) {
     uint8_t *end   = (uint8_t *)madt + madt->h.Length;
 
     if (entry == NULL)
-        return (struct madt_entry *)start;
+	return (struct madt_entry *)start;
 
     if (entry->length < sizeof(struct madt_entry))
-        return NULL;
+	return NULL;
 
     uint8_t *next = (uint8_t *)entry + entry->length;
 
     if (next + sizeof(struct madt_entry) > end)
-        return NULL;
+	return NULL;
 
     return (struct madt_entry *)next;
 }
@@ -29,16 +29,16 @@ bool madt_entry_valid(struct madt *madt, struct madt_entry *entry) {
     uint8_t *ptr   = (uint8_t *)entry;
 
     if (ptr < start)
-        return false;
+	return false;
 
     if (ptr + sizeof(struct madt_entry) > end)
-        return false;
+	return false;
 
     if (entry->length < sizeof(struct madt_entry))
-        return false;
+	return false;
 
     if (ptr + entry->length > end)
-        return false;
+	return false;
 
     return true;
 }

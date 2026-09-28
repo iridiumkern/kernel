@@ -5,15 +5,15 @@
 
 #define VMM_PAGE_SIZE 4096ULL
 
-#define VMM_P        (1ULL << 0)
+#define VMM_P	(1ULL << 0)
 #define VMM_RW       (1ULL << 1)
 #define VMM_US       (1ULL << 2)
 #define VMM_PWT      (1ULL << 3)
 #define VMM_PCD      (1ULL << 4)
-#define VMM_A        (1ULL << 5)
-#define VMM_D        (1ULL << 6)
+#define VMM_A	(1ULL << 5)
+#define VMM_D	(1ULL << 6)
 #define VMM_PS       (1ULL << 7)
-#define VMM_G        (1ULL << 8)
+#define VMM_G	(1ULL << 8)
 #define VMM_NX       (1ULL << 63)
 
 /**

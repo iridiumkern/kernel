@@ -8,8 +8,8 @@ uint64_t rdtsc(void) {
     uint32_t lo, hi;
 
     __asm__ volatile (
-        "rdtsc"
-        : "=a"(lo), "=d"(hi)
+	"rdtsc"
+	: "=a"(lo), "=d"(hi)
     );
 
     return ((uint64_t)hi << 32) | lo;
@@ -19,11 +19,11 @@ static inline bool rdrand64(uint64_t *out) {
     unsigned char ok;
 
     __asm__ volatile (
-        "rdrand %0\n"
-        "setc %1"
-        : "=r"(*out), "=qm"(ok)
-        :
-        : "cc"
+	"rdrand %0\n"
+	"setc %1"
+	: "=r"(*out), "=qm"(ok)
+	:
+	: "cc"
     );
 
     return ok;
@@ -44,15 +44,15 @@ bool random_u64(uint64_t *out) {
     cpuid(1, &eax, &ebx, &ecx, &edx);
 
     if (ecx & (1U << 30)) {
-        uint64_t value;
+	uint64_t value;
 
-        if (rdrand64(&value)) {
-            *out = jitter ^ value;
-        } else {
-            *out = jitter;
-        }
+	if (rdrand64(&value)) {
+	    *out = jitter ^ value;
+	} else {
+	    *out = jitter;
+	}
     } else {
-        *out = jitter;
+	*out = jitter;
     }
 
     return true;

@@ -10,29 +10,29 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          submodules: recursive
+	uses: actions/checkout@v6
+	with:
+	  submodules: recursive
 
       - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            xorriso \
-            mtools \
-            nasm \
-            lld
+	run: |
+	  sudo apt-get update
+	  sudo apt-get install -y \
+	    build-essential \
+	    xorriso \
+	    mtools \
+	    nasm \
+	    lld
 
       - name: Build
-        run: make
+	run: make
 
       - name: Build disk image
-        run: make image
+	run: make image
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: x86_64 Iridium HDD disk (generic)
-          path: x86_64/generic/iridium.hdd
-          retention-days: 90
+	uses: actions/upload-artifact@v4
+	with:
+	  name: x86_64 Iridium HDD disk (generic)
+	  path: x86_64/generic/iridium.hdd
+	  retention-days: 90

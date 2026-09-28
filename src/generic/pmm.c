@@ -33,26 +33,26 @@ static inline void pmm_clear_range(uint64_t base, uint64_t length) {
     uint64_t last = (base + length) / PAGE_SIZE;
 
     if (last > MAX_PAGES)
-        last = MAX_PAGES;
+	last = MAX_PAGES;
 
     for (uint64_t page = first; page < last; page++)
-        pmm_clear(page);
+	pmm_clear(page);
 }
 
 void pmm_init(void) {
     if (!memmap.response)
-        kpanic("PMM: memory map is NULL\n");
+	kpanic("PMM: memory map is NULL\n");
 
     for (uint64_t i = 0; i < BITMAP_SIZE; i++)
-        pmm_bitmap[i] = 0xff;
+	pmm_bitmap[i] = 0xff;
 
     for (uint64_t i = 0; i < memmap.response->entry_count; i++) {
-        struct limine_memmap_entry *entry = memmap.response->entries[i];
+	struct limine_memmap_entry *entry = memmap.response->entries[i];
 
-        if (entry->type != LIMINE_MEMMAP_USABLE)
-            continue;
+	if (entry->type != LIMINE_MEMMAP_USABLE)
+	    continue;
 
-        pmm_clear_range(entry->base, entry->length);
+	pmm_clear_range(entry->base, entry->length);
     }
 
     pmm_set(0);
@@ -62,10 +62,10 @@ void pmm_init(void) {
 
 uint64_t pmm_alloc(void) {
     for (uint64_t page = 0; page < MAX_PAGES; page++) {
-        if (!pmm_test(page)) {
-            pmm_set(page);
-            return page * PAGE_SIZE;
-        }
+	if (!pmm_test(page)) {
+	    pmm_set(page);
+	    return page * PAGE_SIZE;
+	}
     }
 
     return 0;
@@ -73,42 +73,42 @@ uint64_t pmm_alloc(void) {
 
 void pmm_free(uint64_t address) {
     if (address & (PAGE_SIZE - 1))
-        kpanic("PMM: attempted to free unaligned physical address\n");
+	kpanic("PMM: attempted to free unaligned physical address\n");
 
     uint64_t page = address / PAGE_SIZE;
 
     if (page >= MAX_PAGES)
-        kpanic("PMM: attempted to free invalid physical address\n");
+	kpanic("PMM: attempted to free invalid physical address\n");
 
     if (!pmm_test(page))
-        kpanic("PMM: double free\n");
+	kpanic("PMM: double free\n");
 
     pmm_clear(page);
 }
 
 uint64_t pmm_alloc_pages(uint64_t pages) {
     if (pages == 0)
-        return 0;
+	return 0;
 
     uint64_t consecutive = 0;
     uint64_t start = 0;
 
     for (uint64_t page = 0; page < MAX_PAGES; page++) {
-        if (!pmm_test(page)) {
-            if (consecutive == 0)
-                start = page;
+	if (!pmm_test(page)) {
+	    if (consecutive == 0)
+		start = page;
 
-            consecutive++;
+	    consecutive++;
 
-            if (consecutive == pages) {
-                for (uint64_t i = start; i < start + pages; i++)
-                    pmm_set(i);
+	    if (consecutive == pages) {
+		for (uint64_t i = start; i < start + pages; i++)
+		    pmm_set(i);
 
-                return start * PAGE_SIZE;
-            }
-        } else {
-            consecutive = 0;
-        }
+		return start * PAGE_SIZE;
+	    }
+	} else {
+	    consecutive = 0;
+	}
     }
 
     return 0;
@@ -116,22 +116,22 @@ uint64_t pmm_alloc_pages(uint64_t pages) {
 
 void pmm_free_pages(uint64_t address, uint64_t pages) {
     if (pages == 0)
-        return;
+	return;
 
     if (address & (PAGE_SIZE - 1))
-        kpanic("PMM: attempted to free unaligned physical address\n");
+	kpanic("PMM: attempted to free unaligned physical address\n");
 
     uint64_t start = address / PAGE_SIZE;
 
     if (start >= MAX_PAGES || pages > MAX_PAGES - start)
-        kpanic("PMM: attempted to free invalid physical range\n");
+	kpanic("PMM: attempted to free invalid physical range\n");
 
     for (uint64_t i = 0; i < pages; i++) {
-        uint64_t page = start + i;
+	uint64_t page = start + i;
 
-        if (!pmm_test(page))
-            kpanic("PMM: double free\n");
+	if (!pmm_test(page))
+	    kpanic("PMM: double free\n");
 
-        pmm_clear(page);
+	pmm_clear(page);
     }
 }

@@ -73,8 +73,8 @@ struct FADT {
     uint8_t  Reserved3[3];
   
     // 64bit pointers - Available on ACPI 2.0+
-    uint64_t                X_FirmwareControl;
-    uint64_t                X_Dsdt;
+    uint64_t		X_FirmwareControl;
+    uint64_t		X_Dsdt;
 
     struct GenericAddressStructure X_PM1aEventBlock;
     struct GenericAddressStructure X_PM1bEventBlock;

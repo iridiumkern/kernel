@@ -5,13 +5,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define LAPIC_ID            0x020
+#define LAPIC_ID	    0x020
 #define LAPIC_VERSION       0x030
-#define LAPIC_TPR           0x080
-#define LAPIC_EOI           0x0B0
-#define LAPIC_SVR           0x0F0
+#define LAPIC_TPR	   0x080
+#define LAPIC_EOI	   0x0B0
+#define LAPIC_SVR	   0x0F0
 
-#define LAPIC_ESR           0x280
+#define LAPIC_ESR	   0x280
 #define LAPIC_ICR_LOW       0x300
 #define LAPIC_ICR_HIGH      0x310
 
@@ -25,18 +25,18 @@
 #define LAPIC_TIMER_CURRENT 0x390
 #define LAPIC_TIMER_DIV     0x3E0
 
-#define LAPIC_LDR           0x0D0
-#define LAPIC_DFR           0x0E0
+#define LAPIC_LDR	   0x0D0
+#define LAPIC_DFR	   0x0E0
 
 #define LAPIC_SVR_ENABLE    0x100
 #define LAPIC_LVT_MASKED    0x10000
 #define LAPIC_LVT_PERIODIC  0x20000
 
 #define LAPIC_CPUFOCUS      0x200
-#define LAPIC_NMI           (4 << 8)
+#define LAPIC_NMI	   (4 << 8)
 
 #define PIT_CHANNEL0       0x40
-#define PIT_COMMAND        0x43
+#define PIT_COMMAND	0x43
 
 #define PIT_FREQUENCY      1193182ULL
 #define PIT_MODE_ONESHOT   0x00
@@ -49,10 +49,10 @@ void pit_prepare_sleep(uint32_t usec) {
     uint64_t ticks = (PIT_FREQUENCY * usec) / 1000000ULL;
 
     if (ticks == 0)
-        ticks = 1;
+	ticks = 1;
 
     if (ticks > 65536)
-        ticks = 65536;
+	ticks = 65536;
 
     outb(PIT_COMMAND, 0x30);
 
@@ -67,7 +67,7 @@ void pit_perform_sleep(void) {
     outb(PIT_COMMAND, 0xE2);
 
     while (!(inb(PIT_CHANNEL0) & 0x80))
-        __asm__ volatile ("pause");
+	__asm__ volatile ("pause");
 }
 
 static inline uint32_t lapic_read(uint32_t reg) {
@@ -123,34 +123,34 @@ void lapic_init(struct madt* madt, uint64_t lapic_virtual) {
 
     // Parses all entries that the madt parser can find
     while (entry != NULL) {
-        // If a MADT entry is corrupt we panic
-        // Since if this basic ACPI table is corrupted it is very possible that other tables are broken
-        if (!madt_entry_valid(madt, entry)) {
-            kpanic("MADT entry is invalid!\n");
-        }
+	// If a MADT entry is corrupt we panic
+	// Since if this basic ACPI table is corrupted it is very possible that other tables are broken
+	if (!madt_entry_valid(madt, entry)) {
+	    kpanic("MADT entry is invalid!\n");
+	}
 
-        if (entry->type == MADT_TYPE_LOCAL_NMI) {
-        	struct madt_local_nmi *nmi =
-        		(struct madt_local_nmi *)entry;
-        
-        	printf("FOUND LNMI: processor=%u lint=%u flags=%x\n", nmi->processor_id, nmi->lint, nmi->flags);
-            
-        	uint32_t lvt;
-            
-        	if (nmi->lint == 0) {
-        		lvt = LAPIC_LVT_LINT0;
-        	} else if (nmi->lint == 1) {
-        		lvt = LAPIC_LVT_LINT1;
-        	} else {
-        		kpanic("Invalid LAPIC LINT number!\n");
-        	}
-        
-        	// NMI delivery.
-        	lapic_write(lvt, LAPIC_NMI);
-        }
+	if (entry->type == MADT_TYPE_LOCAL_NMI) {
+		struct madt_local_nmi *nmi =
+			(struct madt_local_nmi *)entry;
+	
+		printf("FOUND LNMI: processor=%u lint=%u flags=%x\n", nmi->processor_id, nmi->lint, nmi->flags);
+	    
+		uint32_t lvt;
+	    
+		if (nmi->lint == 0) {
+			lvt = LAPIC_LVT_LINT0;
+		} else if (nmi->lint == 1) {
+			lvt = LAPIC_LVT_LINT1;
+		} else {
+			kpanic("Invalid LAPIC LINT number!\n");
+		}
+	
+		// NMI delivery.
+		lapic_write(lvt, LAPIC_NMI);
+	}
 
-        // Find the next entry
-        entry = madt_next(madt, entry);
+	// Find the next entry
+	entry = madt_next(madt, entry);
     }
 
     printf("LAPIC: initialized\n");

@@ -33,10 +33,10 @@ static heap_block_t *find_free_block(size_t size) {
     heap_block_t *block = heap_head;
 
     while (block) {
-        if (block->free && block->size >= size)
-            return block;
+	if (block->free && block->size >= size)
+	    return block;
 
-        block = block->next;
+	block = block->next;
     }
 
     return NULL;
@@ -44,13 +44,13 @@ static heap_block_t *find_free_block(size_t size) {
 
 static void split_block(heap_block_t *block, size_t size) {
     if (block->size < size + sizeof(heap_block_t) + ALIGNMENT)
-        return;
+	return;
 
     heap_block_t *new_block =
-        (heap_block_t *)((uint8_t *)(block + 1) + size);
+	(heap_block_t *)((uint8_t *)(block + 1) + size);
 
     new_block->size =
-        block->size - size - sizeof(heap_block_t);
+	block->size - size - sizeof(heap_block_t);
 
     new_block->free = true;
 
@@ -58,7 +58,7 @@ static void split_block(heap_block_t *block, size_t size) {
     new_block->prev = block;
 
     if (block->next)
-        block->next->prev = new_block;
+	block->next->prev = new_block;
 
     block->next = new_block;
     block->size = size;
@@ -68,13 +68,13 @@ static void merge_next(heap_block_t *block) {
     heap_block_t *next = block->next;
 
     if (!next || !next->free)
-        return;
+	return;
 
     block->size += sizeof(heap_block_t) + next->size;
     block->next = next->next;
 
     if (block->next)
-        block->next->prev = block;
+	block->next->prev = block;
 }
 
 void heap_init(void) {
@@ -104,7 +104,7 @@ void heap_init(void) {
 
 void *malloc(size_t size) {
     if (size == 0)
-        return NULL;
+	return NULL;
 
     size = align_up(size);
 
@@ -113,7 +113,7 @@ void *malloc(size_t size) {
     // Kernel has OOM errored.
     // Kernel should start to work overtime here.
     if (!block) {
-        kpanic("OOM! Kernel Heap size exceeded beyond %llu pages!\n", KHEAP_MAX_PAGES);
+	kpanic("OOM! Kernel Heap size exceeded beyond %llu pages!\n", KHEAP_MAX_PAGES);
     }
 
     split_block(block, size);
@@ -125,20 +125,20 @@ void *malloc(size_t size) {
 
 void free(void *ptr) {
     if (!ptr)
-        return;
+	return;
 
     heap_block_t *block =
-        ((heap_block_t *)ptr) - 1;
+	((heap_block_t *)ptr) - 1;
 
     block->free = true;
 
     merge_next(block);
 
     if (block->prev && block->prev->free) {
-        heap_block_t *prev = block->prev;
+	heap_block_t *prev = block->prev;
 
-        merge_next(prev);
-        block = prev;
+	merge_next(prev);
+	block = prev;
     }
 
     merge_next(block);

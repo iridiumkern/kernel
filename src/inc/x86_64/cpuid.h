@@ -7,13 +7,13 @@ static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *
     uint32_t d;
 
     __asm__ volatile (
-        "cpuid"
-        : "=a"(a),
-          "=b"(b),
-          "=c"(c),
-          "=d"(d)
-        : "a"(leaf)
-        : "cc"
+	"cpuid"
+	: "=a"(a),
+	  "=b"(b),
+	  "=c"(c),
+	  "=d"(d)
+	: "a"(leaf)
+	: "cc"
     );
 
     *eax = a;

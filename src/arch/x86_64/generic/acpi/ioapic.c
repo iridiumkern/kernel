@@ -6,8 +6,8 @@
 #include <stddef.h>
 
 typedef struct {
-    uint8_t source;
-    uint32_t gsi;
+	uint8_t source;
+	uint32_t gsi;
 } ioapic_iso_t;
 
 #define IOAPIC_REGSEL  0x00
@@ -24,123 +24,123 @@ static ioapic_iso_t isos[MAX_ISOS];
 static size_t iso_count = 0;
 
 static inline uint32_t ioapic_read(uint8_t reg) {
-    volatile uint32_t *regsel = (volatile uint32_t *)(base + IOAPIC_REGSEL);
-    volatile uint32_t *window = (volatile uint32_t *)(base + IOAPIC_WINDOW);
+	volatile uint32_t *regsel = (volatile uint32_t *)(base + IOAPIC_REGSEL);
+	volatile uint32_t *window = (volatile uint32_t *)(base + IOAPIC_WINDOW);
 
-    *regsel = reg;
-    return *window;
+	*regsel = reg;
+	return *window;
 }
 
 static inline void ioapic_write(uint8_t reg, uint32_t value) {
-    volatile uint32_t *regsel = (volatile uint32_t *)(base + IOAPIC_REGSEL);
-    volatile uint32_t *window = (volatile uint32_t *)(base + IOAPIC_WINDOW);
+	volatile uint32_t *regsel = (volatile uint32_t *)(base + IOAPIC_REGSEL);
+	volatile uint32_t *window = (volatile uint32_t *)(base + IOAPIC_WINDOW);
 
-    *regsel = reg;
-    *window = value;
+	*regsel = reg;
+	*window = value;
 }
 
 void ioapic_register_iso(uint8_t source, uint32_t gsi) {
-    if (iso_count >= MAX_ISOS)
-        return;
+	if (iso_count >= MAX_ISOS)
+		return;
 
-    isos[iso_count].source = source;
-    isos[iso_count].gsi = gsi;
+	isos[iso_count].source = source;
+	isos[iso_count].gsi = gsi;
 
-    iso_count++;
+	iso_count++;
 }
 
 void ioapic_route_gsi(uint32_t gsi, uint8_t vector, uint8_t bsp_lapic_id) {
-    uint32_t index = gsi - gsi_base;
+	uint32_t index = gsi - gsi_base;
 
-    uint8_t low_reg  = 0x10 + (index * 2);
-    uint8_t high_reg = low_reg + 1;
+	uint8_t low_reg  = 0x10 + (index * 2);
+	uint8_t high_reg = low_reg + 1;
 
-    // Route to BSP LAPIC
-    ioapic_write(high_reg, (uint32_t)bsp_lapic_id << 24);
+	// Route to BSP LAPIC
+	ioapic_write(high_reg, (uint32_t)bsp_lapic_id << 24);
 
-    // Fixed delivery, physical destination, active-high,
-    // edge-triggered, unmasked.
-    ioapic_write(low_reg, vector);
+	// Fixed delivery, physical destination, active-high,
+	// edge-triggered, unmasked.
+	ioapic_write(low_reg, vector);
 }
 
 uint32_t ioapic_get_gsi(uint8_t source) {
-    // Gets a GSI for any interrupt, this goes for legacy ISA stuff, and basically anything
-    for (size_t i = 0; i < iso_count; i++) {
-        if (isos[i].source == source)
-            return isos[i].gsi;
-    }
+	// Gets a GSI for any interrupt, this goes for legacy ISA stuff, and basically anything
+	for (size_t i = 0; i < iso_count; i++) {
+		if (isos[i].source == source)
+			return isos[i].gsi;
+	}
 
-    // No override: ISA IRQ maps directly to the same GSI.
-    return source;
+	// No override: ISA IRQ maps directly to the same GSI.
+	return source;
 }
 
 void ioapic_route_nmi(uint32_t gsi, uint8_t bsp_lapic_id) {
-    uint32_t index = gsi - gsi_base;
+	uint32_t index = gsi - gsi_base;
 
-    uint8_t low_reg  = 0x10 + (index * 2);
-    uint8_t high_reg = low_reg + 1;
+	uint8_t low_reg  = 0x10 + (index * 2);
+	uint8_t high_reg = low_reg + 1;
 
-    // Route to BSP LAPIC.
-    ioapic_write(high_reg, (uint32_t)bsp_lapic_id << 24);
+	// Route to BSP LAPIC.
+	ioapic_write(high_reg, (uint32_t)bsp_lapic_id << 24);
 
-    // NMI delivery, physical destination, edge-triggered, unmasked.
-    ioapic_write(low_reg, 4u << 8);
+	// NMI delivery, physical destination, edge-triggered, unmasked.
+	ioapic_write(low_reg, 4u << 8);
 }
 
 void ioapic_init(struct madt *madt, uint64_t ioapic_virtual, uint32_t gsi_base_glb, uint8_t bsp_lapic_id) {
-    // Sets up global variables for ioapic related things
-    base = ioapic_virtual;
-    gsi_base = gsi_base_glb;
+	// Sets up global variables for ioapic related things
+	base = ioapic_virtual;
+	gsi_base = gsi_base_glb;
 
-    uint32_t version = ioapic_read(IOAPIC_VER);
-    uint32_t max_redirection = (version >> 16) & 0xFF;
-    uint32_t redirection_count = max_redirection + 1;
+	uint32_t version = ioapic_read(IOAPIC_VER);
+	uint32_t max_redirection = (version >> 16) & 0xFF;
+	uint32_t redirection_count = max_redirection + 1;
 
-    // Sets up all the interrupts to route to the BSP lapic and masks them
-    for (uint32_t i = 0; i < redirection_count; i++) {
-        uint8_t low_reg  = 0x10 + (i * 2);
-        uint8_t high_reg = low_reg + 1;
+	// Sets up all the interrupts to route to the BSP lapic and masks them
+	for (uint32_t i = 0; i < redirection_count; i++) {
+		uint8_t low_reg  = 0x10 + (i * 2);
+		uint8_t high_reg = low_reg + 1;
 
-        // Route to BSP LAPIC.
-        ioapic_write(high_reg, (uint32_t)bsp_lapic_id << 24);
+		// Route to BSP LAPIC.
+		ioapic_write(high_reg, (uint32_t)bsp_lapic_id << 24);
 
-        // Mask all interrupts from ioapic
-        ioapic_write(low_reg, 1u << 16);
-    }
+		// Mask all interrupts from ioapic
+		ioapic_write(low_reg, 1u << 16);
+	}
 
-    // Search for an NMI source
-    // Find the first MADT entry
-    struct madt_entry *entry = madt_next(madt, NULL);
+	// Search for an NMI source
+	// Find the first MADT entry
+	struct madt_entry *entry = madt_next(madt, NULL);
 
-    // Parses all entries that the madt parser can find
-    while (entry != NULL) {
-        // If a MADT entry is corrupt we panic
-        // Since if this basic ACPI table is corrupted it is very possible that other tables are broken
-        if (!madt_entry_valid(madt, entry)) {
-            kpanic("MADT entry is invalid!\n");
-        }
+	// Parses all entries that the madt parser can find
+	while (entry != NULL) {
+		// If a MADT entry is corrupt we panic
+		// Since if this basic ACPI table is corrupted it is very possible that other tables are broken
+		if (!madt_entry_valid(madt, entry)) {
+			kpanic("MADT entry is invalid!\n");
+		}
 
-        if (entry->type == MADT_TYPE_NMI_SOURCE) {
-            struct madt_nmi_source *nmi = (struct madt_nmi_source*)entry;
-            printf("FOUND NMI!\n");
-            ioapic_route_nmi(nmi->gsi, bsp_lapic_id);
-        }
+		if (entry->type == MADT_TYPE_NMI_SOURCE) {
+			struct madt_nmi_source *nmi = (struct madt_nmi_source*)entry;
+			printf("FOUND NMI!\n");
+			ioapic_route_nmi(nmi->gsi, bsp_lapic_id);
+		}
 
-        // Find the next entry
-        entry = madt_next(madt, entry);
-    }
+		// Find the next entry
+		entry = madt_next(madt, entry);
+	}
 
-    // Maps in the PS/2 keyboard (if it exists, this will crash on some older devices that dont have a PS/2 keyboard)
-    // Should prolly be replaced with an actual check rather than something which risks a crash
-    outb(0x64, 0xAA);
+	// Maps in the PS/2 keyboard (if it exists, this will crash on some older devices that dont have a PS/2 keyboard)
+	// Should prolly be replaced with an actual check rather than something which risks a crash
+	outb(0x64, 0xAA);
 
-    while (!(inb(0x64) & 1));
+	while (!(inb(0x64) & 1));
 
-    uint8_t result = inb(0x60);
+	uint8_t result = inb(0x60);
 
-    if (result == 0x55) {
-        // 8042 exists
-        ioapic_route_gsi(ioapic_get_gsi(1), 0x21, bsp_lapic_id);
-    }
-    (void)gsi_base;
+	if (result == 0x55) {
+		// 8042 exists
+		ioapic_route_gsi(ioapic_get_gsi(1), 0x21, bsp_lapic_id);
+	}
+	(void)gsi_base;
 }

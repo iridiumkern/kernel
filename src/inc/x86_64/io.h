@@ -21,10 +21,10 @@ static inline void outb(uint16_t port, uint8_t val) {
 static inline uint8_t inb(uint16_t port) {
     uint8_t ret;
     __asm__ volatile (
-        "in al, dx"
-        : "=a"(ret)
-        : "d"(port)
-        : "memory"
+	"in al, dx"
+	: "=a"(ret)
+	: "d"(port)
+	: "memory"
     );
     return ret;
 }

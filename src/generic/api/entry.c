@@ -13,9 +13,9 @@ static inline bool cpu_has_smap(void) {
     uint32_t eax, ebx, ecx, edx;
 
     __asm(
-        "cpuid"
-        : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-        : "a"(7), "c"(0)
+	"cpuid"
+	: "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+	: "a"(7), "c"(0)
     );
 
     return (ebx & CPUID_7_EBX_SMAP) != 0;
@@ -39,24 +39,24 @@ bool apisyscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint
     (void)arg5;
     (void)arg6;
     if (arg1 == 0) {
-        // Checks if the page is mapped and if the page is userland
-        if (!range_is_mapped(arg2, arg3) || !range_is_user(arg2, arg3)) {
-            return false;
-        }
+	// Checks if the page is mapped and if the page is userland
+	if (!range_is_mapped(arg2, arg3) || !range_is_user(arg2, arg3)) {
+	    return false;
+	}
 
-        // Enables userland memory access then prints the string, then disables userland memory access
-        usermemoryacc();
-        for (uint64_t i = 0; i < arg3; i++) {
-            putchar_ft(*(const char*)arg2++);
-        }
-        usermemorylock();
-        return true;
+	// Enables userland memory access then prints the string, then disables userland memory access
+	usermemoryacc();
+	for (uint64_t i = 0; i < arg3; i++) {
+	    putchar_ft(*(const char*)arg2++);
+	}
+	usermemorylock();
+	return true;
     } else if (arg1 == 1) {
     } else if (arg1 == 255) {
-        // 0x40 is the PID0 only API
-        thread_t *cur = get_current_thread();
-        if (!cur || !cur->owner) return false;
-        if (cur->owner->pid != 0) return false;
+	// 0x40 is the PID0 only API
+	thread_t *cur = get_current_thread();
+	if (!cur || !cur->owner) return false;
+	if (cur->owner->pid != 0) return false;
     }
     return false;
 }

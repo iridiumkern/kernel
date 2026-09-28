@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 #define LIMINE_REQUESTS_START_MARKER { 0xf6b8f4b39de7d1ae, 0xfab91a6940fcb9cf, \
-                                       0x785c6ed015d3e316, 0x181e920a7852b9d9 }
+				       0x785c6ed015d3e316, 0x181e920a7852b9d9 }
 #define LIMINE_REQUESTS_END_MARKER { 0xadc0e0531bb10d03, 0x9572709f31764c62 }
 
 #define LIMINE_BASE_REVISION(N) { 0xf9562b2d5c95a6c8, 0x6a7b384944536bdc, (N) }
@@ -384,15 +384,15 @@ struct limine_mp_request {
 
 #define LIMINE_MEMMAP_REQUEST_ID { LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62 }
 
-#define LIMINE_MEMMAP_USABLE                 0
-#define LIMINE_MEMMAP_RESERVED               1
+#define LIMINE_MEMMAP_USABLE		 0
+#define LIMINE_MEMMAP_RESERVED	       1
 #define LIMINE_MEMMAP_ACPI_RECLAIMABLE       2
-#define LIMINE_MEMMAP_ACPI_NVS               3
-#define LIMINE_MEMMAP_BAD_MEMORY             4
+#define LIMINE_MEMMAP_ACPI_NVS	       3
+#define LIMINE_MEMMAP_BAD_MEMORY	     4
 #define LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE 5
 #define LIMINE_MEMMAP_EXECUTABLE_AND_MODULES 6
-#define LIMINE_MEMMAP_FRAMEBUFFER            7
-#define LIMINE_MEMMAP_RESERVED_MAPPED        8
+#define LIMINE_MEMMAP_FRAMEBUFFER	    7
+#define LIMINE_MEMMAP_RESERVED_MAPPED	8
 
 struct limine_memmap_entry {
     uint64_t base;

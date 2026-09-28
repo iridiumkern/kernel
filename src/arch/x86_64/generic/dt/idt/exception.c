@@ -23,40 +23,40 @@ static inline uint64_t read_cr2(void) {
 
 static const char* decode_exception(uint64_t exception) {
     switch (exception) {
-        case 0: return "DIVERR"; // Division error
-        case 1: return "DBG"; // Debug
-        case 2: return "NMI"; // NMI
-        case 3: return "BRKPNT"; // Breakpoint
-        case 4: return "OVRFLW"; // Overflow
-        case 5: return "BNDRGEEXC"; // Bound Range Exceeded
-        case 6: return "OPCODE"; // Invalid Opcode
-        case 7: return "DEVNAVAIL"; // Device not available
-        case 8: return "DBLFLT"; // Double Fault
-        case 9: return "CPSGOV"; // Coprocessor Segment Overrun
-        case 10: return "TSS"; // Invalid TSS
-        case 11: return "SEGNP"; // Segment not present
-        case 12: return "SSF"; // Stack Segment Fault
-        case 13: return "GPF"; // General Protection fault
-        case 14: return "PGF"; // Page Fault
-        case 16: return "FPE"; // Floating Point Exception
-        case 17: return "ALGCHK"; // Alignment Check
-        case 18: return "MACHK"; // Machine Check
-        case 19: return "SIMDFPE"; // SIMD Floating Point Exception
-        case 20: return "VRTEXC"; // Virtualization Exception
-        case 21: return "CTRLPE"; // Control Protection Exception
-        case 28: return "HYPINJ"; // Hypervisor Injection
-        case 29: return "VMMCOM"; // VMM Communication Exception
-        case 30: return "SECURE"; // Security Exception
-        default: return "RSRVD"; // Reserved
+	case 0: return "DIVERR"; // Division error
+	case 1: return "DBG"; // Debug
+	case 2: return "NMI"; // NMI
+	case 3: return "BRKPNT"; // Breakpoint
+	case 4: return "OVRFLW"; // Overflow
+	case 5: return "BNDRGEEXC"; // Bound Range Exceeded
+	case 6: return "OPCODE"; // Invalid Opcode
+	case 7: return "DEVNAVAIL"; // Device not available
+	case 8: return "DBLFLT"; // Double Fault
+	case 9: return "CPSGOV"; // Coprocessor Segment Overrun
+	case 10: return "TSS"; // Invalid TSS
+	case 11: return "SEGNP"; // Segment not present
+	case 12: return "SSF"; // Stack Segment Fault
+	case 13: return "GPF"; // General Protection fault
+	case 14: return "PGF"; // Page Fault
+	case 16: return "FPE"; // Floating Point Exception
+	case 17: return "ALGCHK"; // Alignment Check
+	case 18: return "MACHK"; // Machine Check
+	case 19: return "SIMDFPE"; // SIMD Floating Point Exception
+	case 20: return "VRTEXC"; // Virtualization Exception
+	case 21: return "CTRLPE"; // Control Protection Exception
+	case 28: return "HYPINJ"; // Hypervisor Injection
+	case 29: return "VMMCOM"; // VMM Communication Exception
+	case 30: return "SECURE"; // Security Exception
+	default: return "RSRVD"; // Reserved
     }
 }
 
 void exception_handler(struct interrupt_frame *frame) {
     __asm("cli");
     if (frame->exception_code == 1) {
-        // Debug, returns for now
-        __asm("sti");
-        return;
+	// Debug, returns for now
+	__asm("sti");
+	return;
     }
     flanterm_set_text_bg(flantermctx, 2, false);
     flanterm_clear(flantermctx, true);
@@ -64,26 +64,26 @@ void exception_handler(struct interrupt_frame *frame) {
     printf("EXCEPTION!\n");
     printf("Exception: %s (%lu)\n", decode_exception(frame->exception_code), frame->exception_code);
     printf("Error code:    %lu\n", frame->errorcode);
-    printf("RIP:           0x%lx\n", frame->rip);
-    printf("CS:            0x%lx\n", frame->cs);
-    printf("RFLAGS:        0x%lx\n", frame->rflags);
+    printf("RIP:	   0x%lx\n", frame->rip);
+    printf("CS:	    0x%lx\n", frame->cs);
+    printf("RFLAGS:	0x%lx\n", frame->rflags);
     if (frame->cs & 0x03) {
-        printf("RSP:           0x%lx\n", frame->rsp);
-        printf("SS:            0x%lx\n", frame->ss);
+	printf("RSP:	   0x%lx\n", frame->rsp);
+	printf("SS:	    0x%lx\n", frame->ss);
     }
     if (frame->exception_code == 14) {
-        printf("CR2:       0x%lx\n", read_cr2());
+	printf("CR2:       0x%lx\n", read_cr2());
     }
 
     // Print some advice based on the issue
     if (frame->exception_code == 2) {
-        printf("An issue occurred with hardware! Please reboot, if this issue persists please bring it to the device manufacturer or troubleshoot the harding causing the NMI.\n");
+	printf("An issue occurred with hardware! Please reboot, if this issue persists please bring it to the device manufacturer or troubleshoot the harding causing the NMI.\n");
     }
 
     printf("\nSystem halted.\n");
 
     for (;;) {
-        __asm("hlt");
+	__asm("hlt");
     }
 
     __builtin_unreachable();

@@ -1,8 +1,8 @@
 ARCH      ?= x86_64
 PLATFORM  ?= generic
 
-CC        := clang
-LD        := ld.lld
+CC	:= clang
+LD	:= ld.lld
 OBJCOPY   := llvm-objcopy
 
 OUTPUT    := iridium
