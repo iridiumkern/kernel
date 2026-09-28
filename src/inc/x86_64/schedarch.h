@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+/**
+ * @brief General Purpose Registers
+ * 
+ */
 typedef struct regs_frame_t {
     uint64_t r15;
     uint64_t r14;
@@ -27,6 +31,10 @@ typedef struct regs_frame_t {
     uint64_t ss;
 } regs_frame_t;
 
+/**
+ * @brief FXSave registers
+ * 
+ */
 typedef struct fxsave_area_t {
     uint16_t fcw;
     uint16_t fsw;
@@ -42,6 +50,10 @@ typedef struct fxsave_area_t {
     uint8_t reserved1[96];
 } __attribute__((packed, aligned(16))) fxsave_area_t;
 
+/**
+ * @brief The register state
+ * 
+ */
 typedef struct regs_thread_state_t {
     regs_frame_t frame;
     fxsave_area_t fxsave;

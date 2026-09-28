@@ -17,5 +17,4 @@ __attribute__((noreturn)) void __kpanic(const char *file, const char *func, int 
  * @brief Wrapper for __kpanic
  * 
  */
-#define kpanic(fmt, ...) \
-    __kpanic(__FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__)
+#define kpanic(fmt, ...) __kpanic(__FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__)

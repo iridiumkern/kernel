@@ -112,9 +112,29 @@ struct madt_x2apic {
     uint32_t acpi_id;
 } __attribute__((packed));
 
+/**
+ * @brief Grabs the next entry in the MADT
+ * 
+ * @param madt The "root" MADT structure
+ * @param entry Pointer to the last entry given (can be NULL)
+ * @return struct madt_entry* The entry to check, NULL if none next
+ */
 struct madt_entry *madt_next(struct madt *madt, struct madt_entry *entry);
+
+/**
+ * @brief Checks if a MADT entry is valid
+ * 
+ * @param madt The "root" MADT structure
+ * @param entry The entry being checked
+ * @return true Is valid
+ * @return false Isn't valid
+ */
 bool madt_entry_valid(struct madt *madt, struct madt_entry *entry);
 
-// To be implemented by each architecture.
-// As these actions are for the most part architecture inherent.
+/**
+ * @brief Parses the MADT
+ * 
+ * @param madt The MADT
+ * @return acpi_ret Status of the parsing
+ */
 acpi_ret madt_parse(struct madt* madt);

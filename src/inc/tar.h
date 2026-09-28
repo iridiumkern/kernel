@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+/**
+ * @brief Header of the tar stuff
+ * 
+ */
 struct tar_header {
     char filename[100];
     char mode[8];
@@ -22,10 +26,20 @@ struct tar_header {
     char padding[12];
 };
 
+/**
+ * @brief Wrapper around the tar header
+ * 
+ */
 struct tar_wrapper {
     struct tar_header h;
     uintptr_t address;
     struct tar_wrapper *next;
 };
 
+/**
+ * @brief Gets a file from the tarfile
+ * 
+ * @param name The file name to check
+ * @return struct tar_wrapper* The tarheader and address of the files data
+ */
 struct tar_wrapper *tar_getfile(const char* name);

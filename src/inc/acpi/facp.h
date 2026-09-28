@@ -86,4 +86,9 @@ struct FADT {
     struct GenericAddressStructure X_GPE1Block;
 };
 
+/**
+ * @brief Parses the FACP
+ * 
+ * @param facpptr The pointer to the FACP
+ */
 void parse_facp(void* facpptr);

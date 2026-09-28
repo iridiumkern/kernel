@@ -34,5 +34,18 @@ struct XSDP_t {
     uint8_t reserved[3];
 } __attribute__ ((packed));
 
+/**
+ * @brief Parses ACPI
+ * 
+ * @return acpi_ret The ACPI parser
+ */
 acpi_ret parse_acpi(void);
+
+/**
+ * @brief Checks a table
+ * 
+ * @param tableHeader The SDT header
+ * @return true Is valid
+ * @return false Is not valid
+ */
 bool doChecksum(struct SDT_header *tableHeader);
