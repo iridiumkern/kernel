@@ -16,7 +16,6 @@
 #include <limine.h>
 #include <stdio.h>
 
-#include "sec/crypto/sss/sss.h"
 #include <sec/random.h>
 #include <scheduler.h>
 #include <string.h>
@@ -131,9 +130,7 @@ void kmain(void) {
 
 	sspsetup();
 	parse_acpi();
-
-	sss_debug_test();
-
+	
 	// Load userland.tar
 	if (module_request.response->module_count != 1) {
 		// Kernel should only have one module, a tar file
