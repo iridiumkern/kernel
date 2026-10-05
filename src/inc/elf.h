@@ -109,4 +109,4 @@ typedef struct {
 	uint64_t size;
 } Elf64_Image;
 
-bool elf_load_file(const void *file, size_t file_size, uint64_t load_bias, Elf64_Image *image);
+uint64_t elf_load_file(const void *file, size_t file_size);

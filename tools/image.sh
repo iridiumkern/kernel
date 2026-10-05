@@ -38,7 +38,8 @@ mmd -i "$IMAGE@@1M" \
 	::/boot \
 	::/boot/limine
 
-nasm -fbin userland/testapp.asm -o userland/pid0.bin
+nasm -felf64 userland/testapp.asm -o userland/pid0.o
+ld.lld -shared -nostdlib -T userland/linker.ld -o userland/pid0.bin userland/pid0.o
 tar -cf userland.tar userland/pid0.bin
 
 # Copy kernel and Limine files.

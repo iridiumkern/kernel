@@ -1,11 +1,11 @@
-ARCH      ?= x86_64
-PLATFORM  ?= generic
+ARCH ?= x86_64
+PLATFORM ?= generic
 
-CC	:= clang
-LD	:= ld.lld
-OBJCOPY   := llvm-objcopy
+CC := clang
+LD := ld.lld
+OBJCOPY := llvm-objcopy
 
-OUTPUT    := iridium
+OUTPUT := iridium
 GIT_HASH := $(shell git rev-parse --short=7 HEAD)
 GIT_BRANCH := $(shell git branch --show-current)
 MAJOR = 0
@@ -13,15 +13,15 @@ MINOR = 1
 
 IMAGE := build/$(ARCH)/$(PLATFORM)/$(OUTPUT).hdd
 
-SRC_DIR   := src
-ARCH_DIR  := $(SRC_DIR)/arch/$(ARCH)/$(PLATFORM)
-BUILD     := build/$(ARCH)/$(PLATFORM)
-KERNEL    := $(BUILD)/$(OUTPUT)
+SRC_DIR := src
+ARCH_DIR := $(SRC_DIR)/arch/$(ARCH)/$(PLATFORM)
+BUILD := build/$(ARCH)/$(PLATFORM)
+KERNEL := $(BUILD)/$(OUTPUT)
 
 LINKER_SCRIPT := $(ARCH_DIR)/linker.lds
 
-CFLAGS    := -g -O3
-LDFLAGS   :=
+CFLAGS := -g -O3
+LDFLAGS :=
 
 CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\"
 CFLAGS += -DGIT_BRANCH=\"$(GIT_BRANCH)\"
@@ -30,14 +30,8 @@ CFLAGS += -DMINORVER=\"$(MINOR)\"
 
 ifeq ($(ARCH),x86_64)
 	TARGET := x86_64-unknown-none-elf
-	CFLAGS += -m64 -march=x86-64 -mabi=sysv \
-			  -mno-red-zone -mcmodel=kernel \
-			  -masm=intel
+	CFLAGS += -m64 -march=x86-64 -mabi=sysv -mno-red-zone -mcmodel=kernel -masm=intel
 	LDFLAGS += -m elf_x86_64
-endif
-
-ifeq ($(ARCH),riscv64)
-	TARGET := riscv64-unknown-none-elf
 endif
 
 CC += -target $(TARGET)
@@ -55,6 +49,7 @@ override CFLAGS += \
 	-flto \
 	-fvisibility=default
 
+# Security related flags
 override CFLAGS += \
 	-fstack-protector-all \
 	-fsanitize=undefined \
@@ -92,11 +87,11 @@ override LDFLAGS += \
 GENERIC_DIR := $(SRC_DIR)/generic
 
 GENERIC_SRCFILES := $(shell find -L $(GENERIC_DIR) -type f 2>/dev/null | LC_ALL=C sort)
-ARCH_SRCFILES    := $(shell find -L $(ARCH_DIR) -type f -name '*.[cS]' 2>/dev/null | LC_ALL=C sort)
+ARCH_SRCFILES := $(shell find -L $(ARCH_DIR) -type f -name '*.[cS]' 2>/dev/null | LC_ALL=C sort)
 
 SRCFILES := $(GENERIC_SRCFILES) $(ARCH_SRCFILES)
 
-CFILES  := $(filter %.c,$(SRCFILES))
+CFILES := $(filter %.c,$(SRCFILES))
 ASFILES := $(filter %.S,$(SRCFILES))
 
 OBJECTS := \

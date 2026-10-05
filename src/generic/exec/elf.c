@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 #include <pmm.h>
 
 #ifdef __x86_64__
@@ -125,13 +126,6 @@ static bool add_overflow_u64(uint64_t a, uint64_t b, uint64_t *result) {
 	return false;
 }
 
-static bool sub_underflow_u64(uint64_t a, uint64_t b, uint64_t *result) {
-	if (b > a) return true;
-	*result = a - b;
-
-	return false;
-}
-
 static bool mul_overflow_u64(uint64_t a, uint64_t b, uint64_t *result) {
 	if (a != 0 && b > UINT64_MAX / a) return true;
 	*result = a * b;
@@ -159,6 +153,7 @@ static bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t size, uint64_t f
 	if ((newsize & PAGE_MASK) != 0) return false;
 	if (flags & VMM_MAP_WRITE) realflags |= VMM_RW;
 	if (flags & VMM_MAP_NX) realflags |= VMM_NX;
+	realflags |= VMM_US;
 
 	result = vmm_map_pages(virt, phys, newsize / PAGE_SIZE, realflags);
 	#else
@@ -212,22 +207,24 @@ static const Elf64_Phdr *elf_phdr(const Elf64_Ehdr *hdr, uint16_t index) {
 static bool elf_check_load_segment(const Elf64_Phdr *phdr, size_t file_size) {
 	uint64_t file_end;
 	uint64_t mem_end;
+	uint64_t page_size = (uint64_t)PAGE_SIZE;
 
 	if (phdr == NULL) return false;
-	if (phdr->p_type != PT_LOAD) return true;
-	if (phdr->p_flags & ~(PF_R | PF_W | PF_X)) return false;
+	if (phdr->p_type != (Elf64_Word)PT_LOAD) return true;
+	if (phdr->p_flags & ~(Elf64_Xword)(PF_R | PF_W | PF_X)) return false;
 	if (phdr->p_filesz > phdr->p_memsz) return false;
 	if (!elf_range_valid(file_size, phdr->p_offset, phdr->p_filesz)) return false;
 	if (add_overflow_u64(phdr->p_offset, phdr->p_filesz, &file_end)) return false;
 	if (add_overflow_u64(phdr->p_vaddr, phdr->p_memsz, &mem_end)) return false;
 
-	if (phdr->p_memsz == 0) return true;
+	if (phdr->p_memsz == UINT64_C(0)) return true;
 
-	if (phdr->p_align > 1) {
-		if ((phdr->p_align & (phdr->p_align - 1)) != 0) return false;
-		if (phdr->p_align < PAGE_SIZE) return false;
+	if (phdr->p_align > UINT64_C(1)) {
+		if ((phdr->p_align & (phdr->p_align - UINT64_C(1))) != UINT64_C(0)) return false;
+		if (phdr->p_align < page_size) return false;
 		if ((phdr->p_vaddr % phdr->p_align) != (phdr->p_offset % phdr->p_align)) return false;
 	}
+
 	if (mem_end <= phdr->p_vaddr) return false;
 
 	return true;
@@ -335,10 +332,9 @@ static bool elf_entry_valid(const Elf64_Ehdr *hdr, uint64_t load_bias) {
 	return false;
 }
 
-static bool elf_load_segment(const Elf64_Phdr *phdr, const uint8_t *file, size_t file_size, uint64_t load_bias, uint64_t image_low, uint64_t phys_base) {
+static bool elf_load_segment(const Elf64_Phdr *phdr, const uint8_t *file, size_t file_size, uint64_t load_bias, uint64_t image_low) {
 	uint64_t segment_start;
 	uint64_t segment_end;
-	uint64_t destination_offset;
 	uint64_t destination;
 
 	if (phdr->p_type != PT_LOAD) return true;
@@ -349,15 +345,7 @@ static bool elf_load_segment(const Elf64_Phdr *phdr, const uint8_t *file, size_t
 	if (add_overflow_u64(segment_start, phdr->p_memsz, &segment_end)) return false;
 	if (segment_start < image_low) return false;
 
-	if (!sub_underflow_u64(segment_start, image_low, &destination_offset)) {
-		if (destination_offset > UINT64_MAX - phys_base) return false;
-	} else {
-		return false;
-	}
-
-	destination = phys_base + destination_offset;
-
-	if (phdr->p_memsz > UINT64_MAX - destination) return false;
+	destination = segment_start;
 
 	if (phdr->p_filesz != 0) {
 		memcpy((void *)(uintptr_t)destination, file + phdr->p_offset, (size_t)phdr->p_filesz);
@@ -374,14 +362,14 @@ static bool elf_load_segment(const Elf64_Phdr *phdr, const uint8_t *file, size_t
 	return true;
 }
 
-static bool elf_map_segments(const Elf64_Ehdr *hdr, size_t file_size, uint64_t load_bias, uint64_t image_low, uint64_t image_high, uint64_t phys_base) {
+static bool elf_map_segments(const Elf64_Ehdr *hdr, size_t file_size, uint64_t load_bias, uint64_t image_low, uint64_t image_high) {
 	uint64_t page;
 
 	if (image_high <= image_low)
 		return false;
 
 	for (page = image_low; page < image_high; ) {
-		uint64_t map_flags = VMM_MAP_NX;
+		uint64_t map_flags = VMM_MAP_NX | VMM_MAP_WRITE;
 		bool mapped = false;
 		bool writable = false;
 		bool executable = false;
@@ -395,7 +383,7 @@ static bool elf_map_segments(const Elf64_Ehdr *hdr, size_t file_size, uint64_t l
 
 			if (phdr->p_type != PT_LOAD) continue;
 			if (phdr->p_memsz == 0) continue;
-			if (!elf_check_load_segment( phdr, file_size)) return false;
+			if (!elf_check_load_segment(phdr, file_size)) return false;
 			if (add_overflow_u64(phdr->p_vaddr, load_bias, &segment_start)) return false;
 			if (add_overflow_u64(segment_start, phdr->p_memsz, &segment_end)) return false;
 			if (!align_up(segment_end, &segment_page_end)) return false;
@@ -410,19 +398,19 @@ static bool elf_map_segments(const Elf64_Ehdr *hdr, size_t file_size, uint64_t l
 
 			mapped = true;
 		}
+
 		if (writable && executable) return false;
 
 		if (mapped) {
-			uint64_t physical_offset;
-			uint64_t physical_page;
-			if (!sub_underflow_u64(page, image_low, &physical_offset)) {
+			uint64_t phys;
+
+			phys = pmm_alloc();
+
+			if (phys == 0) return false;
+			if (!vmm_map_page(page, phys, PAGE_SIZE, map_flags)) {
+				pmm_free(phys);
 				return false;
 			}
-
-			if (physical_offset > UINT64_MAX - phys_base) return false;
-			physical_page = phys_base + physical_offset;
-
-			if (!vmm_map_page(page, physical_page, PAGE_SIZE, map_flags)) return false;
 		}
 
 		if (page > UINT64_MAX - PAGE_SIZE) break;
@@ -432,70 +420,239 @@ static bool elf_map_segments(const Elf64_Ehdr *hdr, size_t file_size, uint64_t l
 	return true;
 }
 
-static bool elf_load_segments(const Elf64_Ehdr *hdr, const uint8_t *file, size_t file_size, uint64_t load_bias, uint64_t image_low, uint64_t phys_base) {
+static bool elf_load_segments(const Elf64_Ehdr *hdr, const uint8_t *file, size_t file_size, uint64_t load_bias, uint64_t image_low) {
 	for (uint16_t i = 0; i < hdr->e_phnum; i++) {
 		const Elf64_Phdr *phdr = elf_phdr(hdr, i);
-		if (!elf_load_segment(phdr, file, file_size, load_bias, image_low, phys_base)) return false;
+
+		if (!elf_load_segment(phdr, file, file_size, load_bias, image_low)) return false;
 	}
 
 	return true;
 }
 
-bool elf_load_file(const void *file, size_t file_size, uint64_t load_bias, Elf64_Image *image) {
+static bool elf_protect_segments(const Elf64_Ehdr *hdr, uint64_t load_bias) {
+	const Elf64_Phdr *phdr;
+
+	if (hdr == NULL) return false;
+
+	phdr = (const Elf64_Phdr *)((const uint8_t *)hdr + hdr->e_phoff);
+
+	for (uint16_t i = 0; i < hdr->e_phnum; i++) {
+		uint64_t seg_start;
+		uint64_t seg_end;
+		uint64_t page;
+		uint64_t flags;
+
+		if (phdr[i].p_type != PT_LOAD) continue;
+		if (phdr[i].p_memsz == 0) continue;
+
+		if (add_overflow_u64(phdr[i].p_vaddr, load_bias, &seg_start))
+			return false;
+
+		if (add_overflow_u64(seg_start, phdr[i].p_memsz, &seg_end))
+			return false;
+
+		seg_start &= ~(uint64_t)(PAGE_SIZE - 1);
+		seg_end = (seg_end + PAGE_SIZE - 1) &
+			~(uint64_t)(PAGE_SIZE - 1);
+
+		flags = 0;
+
+		if (phdr[i].p_flags & PF_W)
+			flags |= VMM_MAP_WRITE;
+
+		if (!(phdr[i].p_flags & PF_X))
+			flags |= VMM_MAP_NX;
+
+		for (page = seg_start; page < seg_end; page += PAGE_SIZE) {
+			uint64_t phys;
+		
+			phys = vmm_get_phys(page);
+			if (phys == 0) return false;
+		
+			if (!vmm_unmap(page)) return false;
+			if (!vmm_map_page(page, phys, 4096, flags)) return false;
+		}
+	}
+
+	return true;
+}
+
+uint64_t elf_load_file(const void *file, size_t file_size) {
+	if (file == NULL) {
+		printf("ELF: file is NULL\n");
+		return 0;
+	}
+	
 	const uint8_t *data = (const uint8_t *)file;
 	const Elf64_Ehdr *hdr;
-	uint64_t image_low;
-	uint64_t image_high;
-	uint64_t relocated_low;
-	uint64_t relocated_high;
-	uint64_t image_size;
-	uint64_t pages;
-	uint64_t phys_base;
-
-	if (data == NULL || image == NULL) return false;
+	uint64_t image_low = 0;
+	uint64_t image_high = 0;
+	uint64_t relocated_low = 0;
+	uint64_t relocated_high = 0;
+	uint64_t image_size = 0;
+	uint64_t pages = 0;
+	uint64_t virt_base = 0;
+	uint64_t load_bias = 0;
 
 	hdr = (const Elf64_Ehdr *)data;
 
-	if (!elf_check_header(hdr, file_size)) return false;
-	if (hdr->e_type != ET_EXEC && hdr->e_type != ET_DYN) return false;
-	if (!elf_check_phdrs(hdr, file_size)) return false;
-	if (!elf_check_special_segments(hdr)) return false;
-	if (!elf_check_segment_overlap(hdr, file_size)) return false;
-	if (!elf_image_bounds(hdr, file_size, &image_low, &image_high)) return false;
-	if (hdr->e_type == ET_EXEC) return false;
-	if (add_overflow_u64(image_low, load_bias, &relocated_low)) return false;
-	if (add_overflow_u64(image_high, load_bias, &relocated_high)) return false;
-	if (relocated_high <= relocated_low) return false;
-	if ((relocated_low & PAGE_MASK) != 0) return false;
-	if ((relocated_high & PAGE_MASK) != 0) return false;
-	if (!elf_entry_valid(hdr, load_bias)) return false;
+	if (!elf_check_header(hdr, file_size)) {
+		printf("ELF: invalid ELF header\n");
+		return 0;
+	}
 
-	image_size = relocated_high - relocated_low;
+	if (hdr->e_type != ET_DYN) {
+		printf("ELF: unsupported ELF type: %u\n", hdr->e_type);
+		return 0;
+	}
 
-	if (image_size == 0) return false;
-	if ((image_size & PAGE_MASK) != 0) return false;
+	if (!elf_check_phdrs(hdr, file_size)) {
+		printf("ELF: invalid program headers\n");
+		return 0;
+	}
+
+	if (!elf_check_special_segments(hdr)) {
+		printf("ELF: unsupported special segment\n");
+		return 0;
+	}
+
+	if (!elf_check_segment_overlap(hdr, file_size)) {
+		printf("ELF: overlapping or invalid PT_LOAD segments\n");
+		return 0;
+	}
+
+	if (!elf_image_bounds(hdr, file_size, &image_low, &image_high)) {
+		printf("ELF: failed to calculate image bounds\n");
+		return 0;
+	}
+
+	printf("ELF: image bounds: %lx-%lx\n", image_low, image_high);
+
+	image_size = image_high - image_low;
+
+	if (image_size == 0) {
+		printf("ELF: image size is zero\n");
+		return 0;
+	}
+
+	if ((image_size & PAGE_MASK) != 0) {
+		printf("ELF: image size is not page aligned: %lx\n", image_size);
+		return 0;
+	}
 
 	pages = image_size / PAGE_SIZE;
-	if (pages == 0) return false;
 
-	phys_base = pmm_alloc_pages(pages);
-	if (phys_base == 0) return false;
-
-	if (!elf_map_segments(hdr, file_size, load_bias, relocated_low, relocated_high, phys_base)) {
-		pmm_free_pages(phys_base, pages);
-		return false;
+	if (pages == 0) {
+		printf("ELF: calculated page count is zero\n");
+		return 0;
 	}
 
-	if (!elf_load_segments(hdr, data, file_size, load_bias, relocated_low, phys_base)) {
-		pmm_free_pages(phys_base, pages);
-		return false;
+	printf("ELF: image size: %lx, pages: %lu\n", image_size, pages);
+
+	virt_base = vmm_find_free_pages(pages, false);
+
+	if (virt_base == 0) {
+		printf("ELF: vmm_find_free_pages failed for %lu pages\n", pages);
+		return 0;
 	}
 
-	image->entry = hdr->e_entry + load_bias;
-	image->load_bias = load_bias;
-	image->virt_base = relocated_low;
-	image->phys_base = phys_base;
-	image->size = image_size;
+	printf("ELF: virtual base: %lx\n", virt_base);
 
-	return true;
+	if (virt_base < image_low) {
+		printf("ELF: virtual base %lx is below image low %lx\n", virt_base, image_low);
+		return 0;
+	}
+
+	load_bias = virt_base - image_low;
+
+	printf("ELF: load bias: %lx\n", load_bias);
+
+	if (add_overflow_u64(image_low, load_bias, &relocated_low)) {
+		printf("ELF: relocated low address overflow\n");
+		return 0;
+	}
+
+	if (add_overflow_u64(image_high, load_bias, &relocated_high)) {
+		printf("ELF: relocated high address overflow\n");
+		return 0;
+	}
+
+	if (relocated_high <= relocated_low) {
+		printf("ELF: invalid relocated bounds: %lx-%lx\n", relocated_low, relocated_high);
+		return 0;
+	}
+
+	if ((relocated_low & PAGE_MASK) != 0) {
+		printf("ELF: relocated low is not page aligned: %lx\n", relocated_low);
+		return 0;
+	}
+
+	if ((relocated_high & PAGE_MASK) != 0) {
+		printf("ELF: relocated high is not page aligned: %lx\n", relocated_high);
+		return 0;
+	}
+
+	if (!elf_entry_valid(hdr, load_bias)) {
+		printf("ELF: invalid entry point: %lx\n", hdr->e_entry + load_bias);
+		return 0;
+	}
+
+	printf("ELF: entry: %lx\n", hdr->e_entry + load_bias);
+
+	if (!elf_map_segments(hdr, file_size, load_bias, relocated_low, relocated_high)) {
+		printf("ELF: failed to map segments\n");
+		goto fail;
+	}
+
+	printf("ELF: segments mapped\n");
+
+	if (!elf_load_segments(hdr, data, file_size, load_bias, relocated_low)) {
+		printf("ELF: failed to load segments\n");
+		goto fail;
+	}
+
+	if (!elf_protect_segments(hdr, load_bias)) {
+		printf("ELF: failed to apply segment permissions\n");
+		goto fail;
+	}
+
+	printf("ELF: segment permissions applied\n");
+
+	printf("ELF: load successful: entry=%lx base=%lx size=%lx\n", hdr->e_entry + load_bias, relocated_low, image_size);
+
+	return hdr->e_entry + load_bias;
+
+	fail:
+	printf("ELF: cleaning up failed load\n");
+
+	for (uint64_t i = 0; i < pages; i++) {
+		uint64_t virt;
+		uint64_t phys;
+
+		if (i > UINT64_MAX / PAGE_SIZE) {
+			printf("ELF: cleanup index overflow at page %lu\n", i);
+			break;
+		}
+
+		if (i * PAGE_SIZE > UINT64_MAX - relocated_low) {
+			printf("ELF: cleanup address overflow at page %lu\n", i);
+			break;
+		}
+
+		virt = relocated_low + i * PAGE_SIZE;
+		if (!vmm_is_page_mapped(virt)) continue;
+		phys = vmm_get_phys(virt);
+
+		if (!vmm_unmap(virt)) {
+			printf("ELF: failed to unmap page %lx\n", virt);
+			continue;
+		}
+
+		pmm_free(phys);
+	}
+
+	printf("ELF: load failed\n");
+
+	return 0;
 }

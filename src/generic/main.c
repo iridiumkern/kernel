@@ -23,6 +23,7 @@
 #include <panic.h>
 #include <pmm.h>
 #include <tar.h>
+#include <elf.h>
 
 #ifdef __x86_64__
 #include <x86_64/schedarch.h>
@@ -141,12 +142,15 @@ void kmain(void) {
 	uint8_t *data = (uint8_t*)usr->address;
 
 	#ifdef __x86_64__
-	uint64_t physcode = pmm_alloc();
 	uint64_t newcr3 = vmm_create_address_space();
 	write_cr3(newcr3);
+
+	uint64_t load = elf_load_file(data, (size_t)usr->h.size);
+
+	if (load == 0) {
+		kpanic("LOAD == 0 WHEN LOADING PID0.BIN!");
+	}
 	
-	vmm_map(0x10000, physcode, VMM_P | VMM_US | VMM_RW);
-	memcpy((void*)0x10000, data, 4096);
 	uint64_t physstck = pmm_alloc_pages(4);
 	uint64_t virtstck = vmm_find_free_pages(4, true);
 	vmm_map_pages(virtstck, physstck, 4, VMM_P | VMM_US | VMM_RW);
@@ -162,8 +166,8 @@ void kmain(void) {
 	proc->process_paging_struct = newcr3;
 	thread_t *thrd = addthrd(proc->pid);
 	thrd->archdata = malloc(sizeof(regs_thread_state_t));
-	thrd->instruction_ptr = 0x10000;
-	thrd->stack_ptr = virtstck + (4096 * 4);
+	thrd->instruction_ptr = (uintptr_t)load;
+	thrd->stack_ptr = (uintptr_t)(virtstck + (4096 * 4));
 	thrd->state = THREAD_RUNNING;
 
 	if (!setcurthrd(thrd)) {

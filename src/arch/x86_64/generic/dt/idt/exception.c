@@ -2,6 +2,7 @@
 #include "../../src/generic/lib/flanterm/src/flanterm.h"
 
 extern struct flanterm_context *flantermctx;
+extern void TraceStackTrace(unsigned int MaxFrames);
 
 struct interrupt_frame {
     uint64_t exception_code;
@@ -74,6 +75,8 @@ void exception_handler(struct interrupt_frame *frame) {
     if (frame->exception_code == 14) {
 	printf("CR2:       0x%lx\n", read_cr2());
     }
+
+    TraceStackTrace(10);
 
     // Print some advice based on the issue
     if (frame->exception_code == 2) {
