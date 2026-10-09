@@ -5,55 +5,55 @@
 
 // Reads from the TSC
 uint64_t rdtsc(void) {
-    uint32_t lo, hi;
+	uint32_t lo, hi;
 
-    __asm__ volatile (
+	__asm__ volatile (
 	"rdtsc"
 	: "=a"(lo), "=d"(hi)
-    );
+	);
 
-    return ((uint64_t)hi << 32) | lo;
+	return ((uint64_t)hi << 32) | lo;
 }
 
 static inline bool rdrand64(uint64_t *out) {
-    unsigned char ok;
+	unsigned char ok;
 
-    __asm__ volatile (
+	__asm__ volatile (
 	"rdrand %0\n"
 	"setc %1"
 	: "=r"(*out), "=qm"(ok)
 	:
 	: "cc"
-    );
+	);
 
-    return ok;
+	return ok;
 }
 
 // Generic function for random unsigned 64bit integers
 bool random_u64(uint64_t *out) {
-    uint64_t jitter1 = rdtsc();
+	uint64_t jitter1 = rdtsc();
 
-    for (volatile uint64_t i = 0; i < (jitter1 & 0x3FF); i++);
+	for (volatile uint64_t i = 0; i < (jitter1 & 0x3FF); i++);
 
-    uint64_t jitter2 = rdtsc();
+	uint64_t jitter2 = rdtsc();
 
-    uint64_t jitter = jitter1 ^ jitter2;
+	uint64_t jitter = jitter1 ^ jitter2;
 
-    uint32_t eax, ebx, ecx, edx;
+	uint32_t eax, ebx, ecx, edx;
 
-    cpuid(1, &eax, &ebx, &ecx, &edx);
+	cpuid(1, &eax, &ebx, &ecx, &edx);
 
-    if (ecx & (1U << 30)) {
+	if (ecx & (1U << 30)) {
 	uint64_t value;
 
 	if (rdrand64(&value)) {
-	    *out = jitter ^ value;
+		*out = jitter ^ value;
 	} else {
-	    *out = jitter;
+		*out = jitter;
 	}
-    } else {
+	} else {
 	*out = jitter;
-    }
+	}
 
-    return true;
+	return true;
 }

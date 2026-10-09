@@ -1,12 +1,12 @@
 #include <stdint.h>
 
 static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
-    uint32_t a;
-    uint32_t b;
-    uint32_t c;
-    uint32_t d;
+	uint32_t a;
+	uint32_t b;
+	uint32_t c;
+	uint32_t d;
 
-    __asm__ volatile (
+	__asm__ volatile (
 	"cpuid"
 	: "=a"(a),
 	  "=b"(b),
@@ -14,10 +14,10 @@ static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *
 	  "=d"(d)
 	: "a"(leaf)
 	: "cc"
-    );
+	);
 
-    *eax = a;
-    *ebx = b;
-    *ecx = c;
-    *edx = d;
+	*eax = a;
+	*ebx = b;
+	*ecx = c;
+	*edx = d;
 }

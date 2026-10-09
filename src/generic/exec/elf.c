@@ -550,7 +550,7 @@ uint64_t elf_load_file(const void *file, size_t file_size) {
 
 	printf("ELF: image size: %lx, pages: %lu\n", image_size, pages);
 
-	virt_base = vmm_find_free_pages(pages, false);
+	virt_base = vmm_find_free_pages(pages, true);
 
 	if (virt_base == 0) {
 		printf("ELF: vmm_find_free_pages failed for %lu pages\n", pages);

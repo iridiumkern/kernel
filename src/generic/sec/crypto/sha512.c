@@ -43,8 +43,8 @@ static inline void update_w(uint64_t *w, int i, const uint8_t *buffer) {
 		} else {
 			uint64_t a = w[(j + 1) & 15];
 			uint64_t b = w[(j + 14) & 15];
-			uint64_t s0 = (rotr(a,    1) ^ rotr(a,    8) ^ (a >>    7));
-			uint64_t s1 = (rotr(b, 19) ^ rotr(b, 61) ^ (b >>    6));
+			uint64_t s0 = (rotr(a,	1) ^ rotr(a,	8) ^ (a >>	7));
+			uint64_t s1 = (rotr(b, 19) ^ rotr(b, 61) ^ (b >>	6));
 			w[j] += w[(j + 9) & 15] + s0 + s1;
 		}
 	}

@@ -4,29 +4,29 @@
 #include <stdbool.h>
 
 typedef enum thread_state {
-    THREAD_READY = 0,
-    THREAD_RUNNING = 1,
-    THREAD_BLOCKED = 2,
-    THREAD_DEAD = 3
+	THREAD_READY = 0,
+	THREAD_RUNNING = 1,
+	THREAD_BLOCKED = 2,
+	THREAD_DEAD = 3
 }thread_state;
 
 typedef struct thread_t {
-    thread_state state;
-    uint64_t tid;
-    uintptr_t instruction_ptr;
-    uintptr_t stack_ptr;
-    bool enabled; // Does the thread function
-    void* archdata; // Architecture specific things, registers, the like.
-    struct thread_t *next;
-    struct process_t *owner;
+	thread_state state;
+	uint64_t tid;
+	uintptr_t instruction_ptr;
+	uintptr_t stack_ptr;
+	bool enabled; // Does the thread function
+	void* archdata; // Architecture specific things, registers, the like.
+	struct thread_t *next;
+	struct process_t *owner;
 }thread_t;
 
 typedef struct process_t {
-    uint64_t pid;
-    uint64_t nexthread;
-    thread_t *threads;
-    uint64_t process_paging_struct; // On x86_64 this is CR3
-    struct process_t *next;
+	uint64_t pid;
+	uint64_t nexthread;
+	thread_t *threads;
+	uint64_t process_paging_struct; // On x86_64 this is CR3
+	struct process_t *next;
 }process_t;
 
 /**

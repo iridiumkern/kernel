@@ -9,72 +9,72 @@ static uint64_t state[8] = {0};
 static bool init = false;
 
 bool csprng_init(void) {
-    if (init) return false;
+	if (init) return false;
 
-    uint64_t dirtystuff = 0;
-    if (!random_u64(&dirtystuff)) return false;
+	uint64_t dirtystuff = 0;
+	if (!random_u64(&dirtystuff)) return false;
 
-    sha512_bytes((void*)&dirtystuff, 8, (void*)&state);
+	sha512_bytes((void*)&dirtystuff, 8, (void*)&state);
 
-    memset(&dirtystuff, 0, 8);
-    init = true;
-    return true;
+	memset(&dirtystuff, 0, 8);
+	init = true;
+	return true;
 }
 
 bool csprng_addentropy(void* data, uint64_t size) {
-    if (!init) return false;
-    if (!range_is_mapped((uintptr_t)data, size)) return false;
+	if (!init) return false;
+	if (!range_is_mapped((uintptr_t)data, size)) return false;
 
-    uint64_t hasheddata[8] = {0};
-    uint64_t newstate[8] = {0};
-    sha512_bytes(data, size, (void*)&hasheddata);
+	uint64_t hasheddata[8] = {0};
+	uint64_t newstate[8] = {0};
+	sha512_bytes(data, size, (void*)&hasheddata);
 
-    // Mix the hashed data with the current state
-    for (int i = 0; i < 8; i++) {
+	// Mix the hashed data with the current state
+	for (int i = 0; i < 8; i++) {
 	uint64_t extra_entropy = 0;
 	if (!random_u64(&extra_entropy)) {
-	    memset(newstate, 0, 64);
-	    memset(hasheddata, 0, 64);
-	    extra_entropy = 0;
-	    return false;
+		memset(newstate, 0, 64);
+		memset(hasheddata, 0, 64);
+		extra_entropy = 0;
+		return false;
 	}
 	newstate[i] = state[i] ^ hasheddata[i] ^ extra_entropy;
 	extra_entropy = 0;
-    }
-    memcpy(state, newstate, 64);
-    memset(newstate, 0, 64);
-    memset(hasheddata, 0, 64);
-    return true;
+	}
+	memcpy(state, newstate, 64);
+	memset(newstate, 0, 64);
+	memset(hasheddata, 0, 64);
+	return true;
 }
 
 bool csprng_getrand(uint8_t *out) {
-    uint64_t output[8];
-    uint64_t newstate[8];
+	uint64_t output[8];
+	uint64_t newstate[8];
 
-    if (!init) return false;
-    if (!range_is_mapped((uintptr_t)out, 64)) return false;
-    
-    sha512_bytes((void*)&state,64, (void*)&output);
-    sha512_bytes((void*)&output, 64, (void*)&newstate);
+	if (!init) return false;
+	if (!range_is_mapped((uintptr_t)out, 64)) return false;
+	
+	sha512_bytes((void*)&state,64, (void*)&output);
+	sha512_bytes((void*)&output, 64, (void*)&newstate);
 
-    // Add some extra entropy
-    uint64_t tmpbuf;
-    if (!random_u64(&tmpbuf)) {
+	// Add some extra entropy
+	uint64_t tmpbuf;
+	if (!random_u64(&tmpbuf)) {
 	memset(output, 0, 64);
 	memset(newstate, 0, 64);
 	return false;
-    }
+	}
 
-    // Copy the new state and then add in entropy
-    memcpy(state, newstate, 64);
-    if (!csprng_addentropy(&tmpbuf, 8)) {
+	// Copy the new state and then add in entropy
+	memcpy(state, newstate, 64);
+	if (!csprng_addentropy(&tmpbuf, 8)) {
 	memset(output, 0, 64);
 	memset(newstate, 0, 64);
 	return false;
-    }
-    // Zero the state from the stack
-    memcpy(out, output, 64);
-    memset(output, 0, 64);
-    memset(newstate, 0, 64);
-    return true;
+	}
+	// Zero the state from the stack
+	memcpy(out, output, 64);
+	memset(output, 0, 64);
+	memset(newstate, 0, 64);
+	return true;
 }

@@ -13,8 +13,8 @@ typedef struct {
 #define IOAPIC_REGSEL  0x00
 #define IOAPIC_WINDOW  0x10
 
-#define IOAPIC_ID      0x00
-#define IOAPIC_VER     0x01
+#define IOAPIC_ID	  0x00
+#define IOAPIC_VER	 0x01
 #define MAX_ISOS 32
 
 static uintptr_t base = 0;

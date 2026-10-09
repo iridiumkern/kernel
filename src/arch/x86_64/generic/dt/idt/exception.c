@@ -5,25 +5,25 @@ extern struct flanterm_context *flantermctx;
 extern void TraceStackTrace(unsigned int MaxFrames);
 
 struct interrupt_frame {
-    uint64_t exception_code;
-    uint64_t errorcode;
-    uint64_t rip;
-    uint64_t cs;
-    uint64_t rflags;
+	uint64_t exception_code;
+	uint64_t errorcode;
+	uint64_t rip;
+	uint64_t cs;
+	uint64_t rflags;
 
-    // Priv change
-    uint64_t rsp;
-    uint64_t ss;
+	// Priv change
+	uint64_t rsp;
+	uint64_t ss;
 };
 
 static inline uint64_t read_cr2(void) {
-    uint64_t value;
-    __asm__ volatile ("mov %0, cr2" : "=r"(value));
-    return value;
+	uint64_t value;
+	__asm__ volatile ("mov %0, cr2" : "=r"(value));
+	return value;
 }
 
 static const char* decode_exception(uint64_t exception) {
-    switch (exception) {
+	switch (exception) {
 	case 0: return "DIVERR"; // Division error
 	case 1: return "DBG"; // Debug
 	case 2: return "NMI"; // NMI
@@ -49,45 +49,45 @@ static const char* decode_exception(uint64_t exception) {
 	case 29: return "VMMCOM"; // VMM Communication Exception
 	case 30: return "SECURE"; // Security Exception
 	default: return "RSRVD"; // Reserved
-    }
+	}
 }
 
 void exception_handler(struct interrupt_frame *frame) {
-    __asm("cli");
-    if (frame->exception_code == 1) {
+	__asm("cli");
+	if (frame->exception_code == 1) {
 	// Debug, returns for now
 	__asm("sti");
 	return;
-    }
-    flanterm_set_text_bg(flantermctx, 2, false);
-    flanterm_clear(flantermctx, true);
+	}
+	flanterm_set_text_bg(flantermctx, 2, false);
+	flanterm_clear(flantermctx, true);
 
-    printf("EXCEPTION!\n");
-    printf("Exception: %s (%lu)\n", decode_exception(frame->exception_code), frame->exception_code);
-    printf("Error code:    %lu\n", frame->errorcode);
-    printf("RIP:	   0x%lx\n", frame->rip);
-    printf("CS:	    0x%lx\n", frame->cs);
-    printf("RFLAGS:	0x%lx\n", frame->rflags);
-    if (frame->cs & 0x03) {
-	printf("RSP:	   0x%lx\n", frame->rsp);
-	printf("SS:	    0x%lx\n", frame->ss);
-    }
-    if (frame->exception_code == 14) {
-	printf("CR2:       0x%lx\n", read_cr2());
-    }
+	printf("EXCEPTION!\n");
+	printf("Exception:  %s (%lu)\n", decode_exception(frame->exception_code), frame->exception_code);
+	printf("Error code: %lu\n", frame->errorcode);
+	printf("RIP:	 0x%lx\n", frame->rip);
+	printf("CS:	 0x%lx\n", frame->cs);
+	printf("RFLAGS:	 0x%lx\n", frame->rflags);
+	if (frame->cs & 0x03) {
+		printf("RSP:	 0x%lx\n", frame->rsp);
+		printf("SS:	 0x%lx\n", frame->ss);
+	}
+	if (frame->exception_code == 14) {
+		printf("CR2:	 0x%lx\n", read_cr2());
+	}
 
-    TraceStackTrace(10);
+	TraceStackTrace(10);
 
-    // Print some advice based on the issue
-    if (frame->exception_code == 2) {
+	// Print some advice based on the issue
+	if (frame->exception_code == 2) {
 	printf("An issue occurred with hardware! Please reboot, if this issue persists please bring it to the device manufacturer or troubleshoot the harding causing the NMI.\n");
-    }
+	}
 
-    printf("\nSystem halted.\n");
+	printf("\nSystem halted.\n");
 
-    for (;;) {
+	for (;;) {
 	__asm("hlt");
-    }
+	}
 
-    __builtin_unreachable();
+	__builtin_unreachable();
 }

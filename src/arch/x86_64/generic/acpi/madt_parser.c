@@ -12,63 +12,63 @@ extern void ioapic_init(struct madt *madt, uint64_t ioapic_virtual, uint32_t gsi
 extern void ioapic_register_iso(uint8_t source, uint32_t gsi);
 
 acpi_ret madt_parse(struct madt* madt) {
-    if (!madt) {
+	if (!madt) {
 	// Used for when a feature and or table or other thing is not there/available
 	return ACPI_MISSING;
-    }
+	}
 
-    uint32_t eax, ebx, ecx, edx;
+	uint32_t eax, ebx, ecx, edx;
 
-    __asm__ volatile (
+	__asm__ volatile (
 	"cpuid"
 	: "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
 	: "a"(1)
-    );
+	);
 
-    uint32_t bsp_apic_id = ebx >> 24;
+	uint32_t bsp_apic_id = ebx >> 24;
 
-    // Find the first MADT entry
-    struct madt_entry *entry = madt_next(madt, NULL);
+	// Find the first MADT entry
+	struct madt_entry *entry = madt_next(madt, NULL);
 
-    // Parses all entries that the madt parser can find
-    while (entry != NULL) {
+	// Parses all entries that the madt parser can find
+	while (entry != NULL) {
 	// If a MADT entry is corrupt we panic
 	// Since if this basic ACPI table is corrupted it is very possible that other tables are broken
 	if (!madt_entry_valid(madt, entry)) {
-	    kpanic("MADT entry is invalid!\n");
+		kpanic("MADT entry is invalid!\n");
 	}
 
 	// Sets up an LAPIC
 	if (entry->type == MADT_TYPE_LOCAL_APIC) {
-	    struct madt_local_apic *lapic = (struct madt_local_apic *)entry;
+		struct madt_local_apic *lapic = (struct madt_local_apic *)entry;
 
-	    // Sets up the BSP lapic
-	    if (lapic->apic_id == bsp_apic_id) {
+		// Sets up the BSP lapic
+		if (lapic->apic_id == bsp_apic_id) {
 		if (madt->lapicaddr == 0) {
-		    kpanic("madt->lapicaddr == 0");
+			kpanic("madt->lapicaddr == 0");
 		}
 		// Map the lapic address
 		uint64_t page = vmm_find_free_pages(1, false);
 		vmm_map(page, madt->lapicaddr, VMM_P | VMM_RW);
 
 		lapic_init(madt, page);
-	    }
+		}
 	} else if (entry->type == MADT_TYPE_ISO) {
-	    // Registers an ISO
-	    struct madt_iso *iso = (struct madt_iso*)entry;
-	    ioapic_register_iso(iso->source, iso->gsi);
+		// Registers an ISO
+		struct madt_iso *iso = (struct madt_iso*)entry;
+		ioapic_register_iso(iso->source, iso->gsi);
 	} else if (entry->type == MADT_TYPE_IO_APIC) {
-	    struct madt_io_apic *ioapic = (struct madt_io_apic*)entry;
-	    
-	    // Maps the IOAPIC and sets it up
-	    uint64_t page = vmm_find_free_pages(1, true);
-	    vmm_map(page, ioapic->address, VMM_P | VMM_RW);
-	    ioapic_init(madt, page, ioapic->gsi_base, bsp_apic_id);
+		struct madt_io_apic *ioapic = (struct madt_io_apic*)entry;
+		
+		// Maps the IOAPIC and sets it up
+		uint64_t page = vmm_find_free_pages(1, true);
+		vmm_map(page, ioapic->address, VMM_P | VMM_RW);
+		ioapic_init(madt, page, ioapic->gsi_base, bsp_apic_id);
 	}
 
 	// Find the next entry
 	entry = madt_next(madt, entry);
-    }
-    
-    return ACPI_OK;
+	}
+	
+	return ACPI_OK;
 }

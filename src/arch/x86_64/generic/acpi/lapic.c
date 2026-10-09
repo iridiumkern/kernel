@@ -5,128 +5,128 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define LAPIC_ID	    0x020
-#define LAPIC_VERSION       0x030
+#define LAPIC_ID		0x020
+#define LAPIC_VERSION	   0x030
 #define LAPIC_TPR	   0x080
 #define LAPIC_EOI	   0x0B0
 #define LAPIC_SVR	   0x0F0
 
 #define LAPIC_ESR	   0x280
-#define LAPIC_ICR_LOW       0x300
-#define LAPIC_ICR_HIGH      0x310
+#define LAPIC_ICR_LOW	   0x300
+#define LAPIC_ICR_HIGH	  0x310
 
-#define LAPIC_LVT_TIMER     0x320
-#define LAPIC_LVT_PERF      0x340
-#define LAPIC_LVT_LINT0     0x350
-#define LAPIC_LVT_LINT1     0x360
-#define LAPIC_LVT_ERROR     0x370
+#define LAPIC_LVT_TIMER	 0x320
+#define LAPIC_LVT_PERF	  0x340
+#define LAPIC_LVT_LINT0	 0x350
+#define LAPIC_LVT_LINT1	 0x360
+#define LAPIC_LVT_ERROR	 0x370
 
-#define LAPIC_TIMER_INIT    0x380
+#define LAPIC_TIMER_INIT	0x380
 #define LAPIC_TIMER_CURRENT 0x390
-#define LAPIC_TIMER_DIV     0x3E0
+#define LAPIC_TIMER_DIV	 0x3E0
 
 #define LAPIC_LDR	   0x0D0
 #define LAPIC_DFR	   0x0E0
 
-#define LAPIC_SVR_ENABLE    0x100
-#define LAPIC_LVT_MASKED    0x10000
+#define LAPIC_SVR_ENABLE	0x100
+#define LAPIC_LVT_MASKED	0x10000
 #define LAPIC_LVT_PERIODIC  0x20000
 
-#define LAPIC_CPUFOCUS      0x200
+#define LAPIC_CPUFOCUS	  0x200
 #define LAPIC_NMI	   (4 << 8)
 
-#define PIT_CHANNEL0       0x40
+#define PIT_CHANNEL0	   0x40
 #define PIT_COMMAND	0x43
 
-#define PIT_FREQUENCY      1193182ULL
+#define PIT_FREQUENCY	  1193182ULL
 #define PIT_MODE_ONESHOT   0x00
-#define PIT_ACCESS_LOHI    0x30
+#define PIT_ACCESS_LOHI	0x30
 
 static volatile uint32_t *lapic;
 static uint64_t pit_ticks;
 
 void pit_prepare_sleep(uint32_t usec) {
-    uint64_t ticks = (PIT_FREQUENCY * usec) / 1000000ULL;
+	uint64_t ticks = (PIT_FREQUENCY * usec) / 1000000ULL;
 
-    if (ticks == 0)
+	if (ticks == 0)
 	ticks = 1;
 
-    if (ticks > 65536)
+	if (ticks > 65536)
 	ticks = 65536;
 
-    outb(PIT_COMMAND, 0x30);
+	outb(PIT_COMMAND, 0x30);
 
-    pit_ticks = (ticks == 65536) ? 0 : (uint16_t)ticks;
+	pit_ticks = (ticks == 65536) ? 0 : (uint16_t)ticks;
 
-    outb(PIT_CHANNEL0, pit_ticks & 0xFF);
-    outb(PIT_CHANNEL0, pit_ticks >> 8);
+	outb(PIT_CHANNEL0, pit_ticks & 0xFF);
+	outb(PIT_CHANNEL0, pit_ticks >> 8);
 }
 
 // Sleeps for the configured usecs
 void pit_perform_sleep(void) {
-    outb(PIT_COMMAND, 0xE2);
+	outb(PIT_COMMAND, 0xE2);
 
-    while (!(inb(PIT_CHANNEL0) & 0x80))
+	while (!(inb(PIT_CHANNEL0) & 0x80))
 	__asm__ volatile ("pause");
 }
 
 static inline uint32_t lapic_read(uint32_t reg) {
-    return lapic[reg / sizeof(uint32_t)];
+	return lapic[reg / sizeof(uint32_t)];
 }
 
 static inline void lapic_write(uint32_t reg, uint32_t value) {
-    lapic[reg / sizeof(uint32_t)] = value;
+	lapic[reg / sizeof(uint32_t)] = value;
 }
 
 void apic_start_timer(void) {
-    lapic_write(LAPIC_TIMER_DIV, 0x3);
+	lapic_write(LAPIC_TIMER_DIV, 0x3);
 
-    lapic_write(LAPIC_TIMER_INIT, 0xFFFFFFFF);
+	lapic_write(LAPIC_TIMER_INIT, 0xFFFFFFFF);
 
-    // Sleeps for 1ms
-    pit_prepare_sleep(1000);
-    pit_perform_sleep();
+	// Sleeps for 1ms
+	pit_prepare_sleep(1000);
+	pit_perform_sleep();
 
-    lapic_write(LAPIC_LVT_TIMER, LAPIC_LVT_MASKED);
+	lapic_write(LAPIC_LVT_TIMER, LAPIC_LVT_MASKED);
 
-    uint32_t ticks_in_1ms = 0xFFFFFFFF - lapic_read(LAPIC_TIMER_CURRENT);
+	uint32_t ticks_in_1ms = 0xFFFFFFFF - lapic_read(LAPIC_TIMER_CURRENT);
 
-    printf("LAPIC: %u ticks / 1ms\n", ticks_in_1ms);
+	printf("LAPIC: %u ticks / 1ms\n", ticks_in_1ms);
 
-    // Enable the timer on vector 0x20
-    lapic_write(LAPIC_LVT_TIMER, 0x20 | LAPIC_LVT_PERIODIC);
+	// Enable the timer on vector 0x20
+	lapic_write(LAPIC_LVT_TIMER, 0x20 | LAPIC_LVT_PERIODIC);
 
-    lapic_write(LAPIC_TIMER_DIV, 0x3);
-    lapic_write(LAPIC_TIMER_INIT, ticks_in_1ms);
+	lapic_write(LAPIC_TIMER_DIV, 0x3);
+	lapic_write(LAPIC_TIMER_INIT, ticks_in_1ms);
 }
 
 void lapic_eoi(void) {
-    lapic_write(LAPIC_EOI, 0);
+	lapic_write(LAPIC_EOI, 0);
 }
 
 void lapic_init(struct madt* madt, uint64_t lapic_virtual) {
-    lapic = (volatile uint32_t *)lapic_virtual;
+	lapic = (volatile uint32_t *)lapic_virtual;
 
-    printf("LAPIC ID: %x\n", lapic_read(LAPIC_ID) >> 24);
+	printf("LAPIC ID: %x\n", lapic_read(LAPIC_ID) >> 24);
 
-    printf("LAPIC Version: %x\n", lapic_read(LAPIC_VERSION));
+	printf("LAPIC Version: %x\n", lapic_read(LAPIC_VERSION));
 
-    lapic_write(LAPIC_TPR, 0);
+	lapic_write(LAPIC_TPR, 0);
 
-    lapic_write(LAPIC_SVR, LAPIC_SVR_ENABLE | 0xFF);
+	lapic_write(LAPIC_SVR, LAPIC_SVR_ENABLE | 0xFF);
 
-    lapic_write(LAPIC_EOI, 0);
+	lapic_write(LAPIC_EOI, 0);
 
-    apic_start_timer();
+	apic_start_timer();
 
-    struct madt_entry *entry = madt_next(madt, NULL);
+	struct madt_entry *entry = madt_next(madt, NULL);
 
-    // Parses all entries that the madt parser can find
-    while (entry != NULL) {
+	// Parses all entries that the madt parser can find
+	while (entry != NULL) {
 	// If a MADT entry is corrupt we panic
 	// Since if this basic ACPI table is corrupted it is very possible that other tables are broken
 	if (!madt_entry_valid(madt, entry)) {
-	    kpanic("MADT entry is invalid!\n");
+		kpanic("MADT entry is invalid!\n");
 	}
 
 	if (entry->type == MADT_TYPE_LOCAL_NMI) {
@@ -134,9 +134,9 @@ void lapic_init(struct madt* madt, uint64_t lapic_virtual) {
 			(struct madt_local_nmi *)entry;
 	
 		printf("FOUND LNMI: processor=%u lint=%u flags=%x\n", nmi->processor_id, nmi->lint, nmi->flags);
-	    
+		
 		uint32_t lvt;
-	    
+		
 		if (nmi->lint == 0) {
 			lvt = LAPIC_LVT_LINT0;
 		} else if (nmi->lint == 1) {
@@ -151,7 +151,7 @@ void lapic_init(struct madt* madt, uint64_t lapic_virtual) {
 
 	// Find the next entry
 	entry = madt_next(madt, entry);
-    }
+	}
 
-    printf("LAPIC: initialized\n");
+	printf("LAPIC: initialized\n");
 }

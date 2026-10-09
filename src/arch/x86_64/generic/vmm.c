@@ -13,7 +13,7 @@
 #define PAGE_SIZE 4096
 
 #define VMM_USER_START   0x0000000000001000ULL
-#define VMM_USER_END     0x00007FFFFFFFF000ULL
+#define VMM_USER_END	 0x00007FFFFFFFF000ULL
 
 #define VMM_KERNEL_START 0xFFFF800100000000ULL
 #define VMM_KERNEL_END   0xFFFFFFFFFFFFF000ULL
@@ -21,60 +21,60 @@
 static uint64_t reference_cr3 = 0;
 
 uint64_t read_cr3(void) {
-    uint64_t cr3;
+	uint64_t cr3;
 
-    __asm__ volatile (
+	__asm__ volatile (
 	"mov %0, cr3"
 	: "=r"(cr3)
-    );
+	);
 
-    return cr3;
+	return cr3;
 }
 
 void write_cr3(uint64_t cr3) {
-    __asm__ volatile (
+	__asm__ volatile (
 	"mov cr3, %0"
 	:
 	: "r"(cr3)
 	: "memory"
-    );
+	);
 }
 
 // Though this works for now
 // I may migrate away from using the HHDM
 // And use a recursive PML4 slot at some point
 static inline uint64_t *phys_to_virt(uint64_t phys) {
-    return (uint64_t *)(uintptr_t)(phys + krnl.hhdm_offset);
+	return (uint64_t *)(uintptr_t)(phys + krnl.hhdm_offset);
 }
 
 static uint64_t vmm_alloc_table(void) {
-    uint64_t phys = pmm_alloc();
+	uint64_t phys = pmm_alloc();
 
-    if (!phys)
+	if (!phys)
 	kpanic("VMM: out of physical memory\n");
 
-    uint64_t *table = phys_to_virt(phys);
+	uint64_t *table = phys_to_virt(phys);
 
-    for (uint64_t i = 0; i < PT_ENTRIES; i++)
+	for (uint64_t i = 0; i < PT_ENTRIES; i++)
 	table[i] = 0;
 
-    return phys;
+	return phys;
 }
 
 static inline uint64_t pml4_index(uint64_t virt) {
-    return (virt >> 39) & 0x1FF;
+	return (virt >> 39) & 0x1FF;
 }
 
 static inline uint64_t pdpt_index(uint64_t virt) {
-    return (virt >> 30) & 0x1FF;
+	return (virt >> 30) & 0x1FF;
 }
 
 static inline uint64_t pd_index(uint64_t virt) {
-    return (virt >> 21) & 0x1FF;
+	return (virt >> 21) & 0x1FF;
 }
 
 static inline uint64_t pt_index(uint64_t virt) {
-    return (virt >> 12) & 0x1FF;
+	return (virt >> 12) & 0x1FF;
 }
 
 static void vmm_free_table(uint64_t phys) {
@@ -176,202 +176,202 @@ bool vmm_map(uint64_t virt, uint64_t phys, uint64_t flags) {
 }
 
 bool vmm_unmap(uint64_t virt) {
-    if (virt & (VMM_PAGE_SIZE - 1))
+	if (virt & (VMM_PAGE_SIZE - 1))
 	return false;
 
-    uint64_t cr3 = read_cr3();
-    uint64_t pml4_phys = cr3 & PAGE_MASK;
+	uint64_t cr3 = read_cr3();
+	uint64_t pml4_phys = cr3 & PAGE_MASK;
 
-    uint64_t *pml4 = phys_to_virt(pml4_phys);
+	uint64_t *pml4 = phys_to_virt(pml4_phys);
 
-    uint64_t pml4_i = pml4_index(virt);
+	uint64_t pml4_i = pml4_index(virt);
 
-    if (!(pml4[pml4_i] & VMM_P))
+	if (!(pml4[pml4_i] & VMM_P))
 	return false;
 
-    uint64_t *pdpt =
+	uint64_t *pdpt =
 	phys_to_virt(pml4[pml4_i] & PAGE_MASK);
 
-    uint64_t pdpt_i = pdpt_index(virt);
+	uint64_t pdpt_i = pdpt_index(virt);
 
-    if (!(pdpt[pdpt_i] & VMM_P))
+	if (!(pdpt[pdpt_i] & VMM_P))
 	return false;
 
-    uint64_t *pd =
+	uint64_t *pd =
 	phys_to_virt(pdpt[pdpt_i] & PAGE_MASK);
 
-    uint64_t pd_i = pd_index(virt);
+	uint64_t pd_i = pd_index(virt);
 
-    if (!(pd[pd_i] & VMM_P))
+	if (!(pd[pd_i] & VMM_P))
 	return false;
 
-    uint64_t *pt =
+	uint64_t *pt =
 	phys_to_virt(pd[pd_i] & PAGE_MASK);
 
-    uint64_t pt_i = pt_index(virt);
+	uint64_t pt_i = pt_index(virt);
 
-    if (!(pt[pt_i] & VMM_P))
+	if (!(pt[pt_i] & VMM_P))
 	return false;
 
-    pt[pt_i] = 0;
+	pt[pt_i] = 0;
 
-    __asm__ volatile (
+	__asm__ volatile (
 	"invlpg [%0]"
 	:
 	: "r"(virt)
 	: "memory"
-    );
+	);
 
-    return true;
+	return true;
 }
 
 uint64_t vmm_get_phys(uint64_t virt) {
-    uint64_t cr3 = read_cr3();
-    uint64_t pml4_phys = cr3 & PAGE_MASK;
+	uint64_t cr3 = read_cr3();
+	uint64_t pml4_phys = cr3 & PAGE_MASK;
 
-    uint64_t *pml4 = phys_to_virt(pml4_phys);
+	uint64_t *pml4 = phys_to_virt(pml4_phys);
 
-    uint64_t pml4_i = pml4_index(virt);
+	uint64_t pml4_i = pml4_index(virt);
 
-    if (!(pml4[pml4_i] & VMM_P))
+	if (!(pml4[pml4_i] & VMM_P))
 	return 0;
 
-    uint64_t *pdpt =
+	uint64_t *pdpt =
 	phys_to_virt(pml4[pml4_i] & PAGE_MASK);
 
-    uint64_t pdpt_i = pdpt_index(virt);
+	uint64_t pdpt_i = pdpt_index(virt);
 
-    if (!(pdpt[pdpt_i] & VMM_P))
+	if (!(pdpt[pdpt_i] & VMM_P))
 	return 0;
 
-    uint64_t *pd =
+	uint64_t *pd =
 	phys_to_virt(pdpt[pdpt_i] & PAGE_MASK);
 
-    uint64_t pd_i = pd_index(virt);
+	uint64_t pd_i = pd_index(virt);
 
-    if (!(pd[pd_i] & VMM_P))
+	if (!(pd[pd_i] & VMM_P))
 	return 0;
 
-    if (pd[pd_i] & VMM_PS)
+	if (pd[pd_i] & VMM_PS)
 	return (pd[pd_i] & 0x000FFFFFFFE00000ULL) | (virt & 0x1FFFFFULL);
 
-    uint64_t *pt = phys_to_virt(pd[pd_i] & PAGE_MASK);
+	uint64_t *pt = phys_to_virt(pd[pd_i] & PAGE_MASK);
 
-    uint64_t pt_i = pt_index(virt);
+	uint64_t pt_i = pt_index(virt);
 
-    if (!(pt[pt_i] & VMM_P))
+	if (!(pt[pt_i] & VMM_P))
 	return 0;
 
-    return (pt[pt_i] & PAGE_MASK) |
+	return (pt[pt_i] & PAGE_MASK) |
 	   (virt & 0xFFF);
 }
 
 bool vmm_map_pages(uint64_t virt, uint64_t phys, uint64_t pages, uint64_t flags) {
-    for (uint64_t i = 0; i < pages; i++) {
-        if (!vmm_map(virt + (i * PAGE_SIZE), phys + (i * PAGE_SIZE), flags)) {
-            // Undo all previously mapped pages (i - 1 down to 0)
-            while (i > 0) {
-                i--;
-                if (!vmm_unmap(virt + (i * PAGE_SIZE))) {
-                    kpanic("vmm_map_pages failed to unwind during failure recovery!\n");
-                }
-            }
-            return false;
-        }
-    }
-    return true;
+	for (uint64_t i = 0; i < pages; i++) {
+		if (!vmm_map(virt + (i * PAGE_SIZE), phys + (i * PAGE_SIZE), flags)) {
+			// Undo all previously mapped pages (i - 1 down to 0)
+			while (i > 0) {
+				i--;
+				if (!vmm_unmap(virt + (i * PAGE_SIZE))) {
+					kpanic("vmm_map_pages failed to unwind during failure recovery!\n");
+				}
+			}
+			return false;
+		}
+	}
+	return true;
 }
 
 bool vmm_free_pages(uint64_t virt, uint64_t pages) {
-    for (uint64_t i = 0; i < pages; i++) {
+	for (uint64_t i = 0; i < pages; i++) {
 	if (!vmm_unmap(virt + (i * PAGE_SIZE))) {
-	    return false;
+		return false;
 	}
-    }
-    return true;
+	}
+	return true;
 }
 
 uint64_t vmm_find_free_pages(uint64_t pages, bool user) {
-    if (pages == 0)
+	if (pages == 0)
 	return 0;
 
-    uint64_t start = user ? VMM_USER_START : VMM_KERNEL_START;
-    uint64_t end   = user ? VMM_USER_END   : VMM_KERNEL_END;
+	uint64_t start = user ? VMM_USER_START : VMM_KERNEL_START;
+	uint64_t end   = user ? VMM_USER_END   : VMM_KERNEL_END;
 
-    uint64_t consecutive = 0;
-    uint64_t found = 0;
+	uint64_t consecutive = 0;
+	uint64_t found = 0;
 
-    for (uint64_t virt = start; virt <= end; virt += PAGE_SIZE) {
+	for (uint64_t virt = start; virt <= end; virt += PAGE_SIZE) {
 	if (vmm_get_phys(virt) == 0) {
-	    if (consecutive == 0)
+		if (consecutive == 0)
 		found = virt;
 
-	    consecutive++;
+		consecutive++;
 
-	    if (consecutive == pages)
+		if (consecutive == pages)
 		return found;
 	} else {
-	    consecutive = 0;
+		consecutive = 0;
 	}
-    }
+	}
 
-    return 0;
+	return 0;
 }
 
 bool vmm_is_page_mapped(uint64_t virt) {
-    if (virt & (PAGE_SIZE - 1))
+	if (virt & (PAGE_SIZE - 1))
 	return false;
 
-    return vmm_get_phys(virt) != 0;
+	return vmm_get_phys(virt) != 0;
 }
 
-bool vmm_page_has_attrs(uint64_t virt, uint64_t attrs) {
-    if (virt & (PAGE_SIZE - 1)) return false;
+__attribute__((no_sanitize("undefined"))) bool vmm_page_has_attrs(uint64_t virt, uint64_t attrs) {
+	if (virt & (PAGE_SIZE - 1)) return false;
 
-    uint64_t cr3 = read_cr3();
-    uint64_t pml4_phys = cr3 & PAGE_MASK;
+	uint64_t cr3 = read_cr3();
+	uint64_t pml4_phys = cr3 & PAGE_MASK;
 
-    uint64_t *pml4 = phys_to_virt(pml4_phys);
+	uint64_t *pml4 = phys_to_virt(pml4_phys);
 
-    uint64_t pml4_i = pml4_index(virt);
+	uint64_t pml4_i = pml4_index(virt);
 
-    if (!(pml4[pml4_i] & VMM_P)) return false;
+	if (!(pml4[pml4_i] & VMM_P)) return false;
 
-    uint64_t pml4e = pml4[pml4_i];
+	uint64_t pml4e = pml4[pml4_i];
 
-    uint64_t *pdpt = phys_to_virt(pml4e & PAGE_MASK);
+	uint64_t *pdpt = phys_to_virt(pml4e & PAGE_MASK);
 
-    uint64_t pdpt_i = pdpt_index(virt);
+	uint64_t pdpt_i = pdpt_index(virt);
 
-    if (!(pdpt[pdpt_i] & VMM_P)) return false;
+	if (!(pdpt[pdpt_i] & VMM_P)) return false;
 
-    uint64_t pdpte = pdpt[pdpt_i];
+	uint64_t pdpte = pdpt[pdpt_i];
 
-    uint64_t *pd = phys_to_virt(pdpte & PAGE_MASK);
+	uint64_t *pd = phys_to_virt(pdpte & PAGE_MASK);
 
-    uint64_t pd_i = pd_index(virt);
+	uint64_t pd_i = pd_index(virt);
 
-    if (!(pd[pd_i] & VMM_P)) return false;
+	if (!(pd[pd_i] & VMM_P)) return false;
 
-    uint64_t pde = pd[pd_i];
+	uint64_t pde = pd[pd_i];
 
-    if (pde & VMM_PS) {
+	if (pde & VMM_PS) {
 	uint64_t effective = pml4e & pdpte & pde;
 
 	return (effective & attrs) == attrs;
-    }
+	}
 
-    uint64_t *pt = phys_to_virt(pde & PAGE_MASK);
+	uint64_t *pt = phys_to_virt(pde & PAGE_MASK);
 
-    uint64_t pt_i = pt_index(virt);
+	uint64_t pt_i = pt_index(virt);
 
-    if (!(pt[pt_i] & VMM_P)) return false;
+	if (!(pt[pt_i] & VMM_P)) return false;
 
-    uint64_t pte = pt[pt_i];
+	uint64_t pte = pt[pt_i];
 
-    uint64_t effective = pml4e & pdpte & pde & pte;
+	uint64_t effective = pml4e & pdpte & pde & pte;
 
-    return (effective & attrs) == attrs;
+	return (effective & attrs) == attrs;
 }
 
 uint64_t vmm_create_address_space(void) {
@@ -443,9 +443,9 @@ bool vmm_destroy_address_space(uint64_t cr3) {
 }
 
 void vmm_init(void) {
-    uint64_t cr3 = read_cr3();
-    reference_cr3 = cr3;
-    printf("VMM: CR3: %lx\n", cr3 & PAGE_MASK);
-    printf("VMM: HHDM: %lx\n", krnl.hhdm_offset);
-    printf("VMM: initialized\n");
+	uint64_t cr3 = read_cr3();
+	reference_cr3 = cr3;
+	printf("VMM: CR3: %lx\n", cr3 & PAGE_MASK);
+	printf("VMM: HHDM: %lx\n", krnl.hhdm_offset);
+	printf("VMM: initialized\n");
 }

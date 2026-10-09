@@ -47,7 +47,8 @@ override CFLAGS += \
 	-ffunction-sections \
 	-fdata-sections \
 	-flto \
-	-fvisibility=default
+	-fvisibility=default \
+	-fno-omit-frame-pointer
 
 # Security related flags
 override CFLAGS += \
@@ -125,6 +126,7 @@ $(BUILD)/%.S.o: $(SRC_DIR)/%.S GNUmakefile
 
 clean:
 	rm -rf build
+	make -C userland clean
 
 qemu:
 ifeq ($(ARCH),x86_64)

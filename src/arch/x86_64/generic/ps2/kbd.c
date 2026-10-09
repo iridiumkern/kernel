@@ -11,10 +11,10 @@ bool shift_down = false;
 
 // A small setup to decode scancodes in the PS2 keyboard
 static char decode_scancode(uint8_t scancode) {
-    bool shift = shift_down;
-    scancode &= 0x7F;
+	bool shift = shift_down;
+	scancode &= 0x7F;
 
-    switch (scancode) {
+	switch (scancode) {
 	case 0x01: return 27;
 
 	case 0x02: return shift ? '!' : '1';
@@ -89,38 +89,38 @@ static char decode_scancode(uint8_t scancode) {
 	case 0x53: return '.';
 
 	default:
-	    return 0;
-    }
+		return 0;
+	}
 }
 
 void ps2_kbd_drv(void) {
-    uint8_t scancode = inb(0x60);
+	uint8_t scancode = inb(0x60);
 
-    bool released = scancode & 0x80;
-    uint8_t key = scancode & 0x7F;
+	bool released = scancode & 0x80;
+	uint8_t key = scancode & 0x7F;
 
-    if (key == 0x2A || key == 0x36) {
+	if (key == 0x2A || key == 0x36) {
 	shift_down = !released;
 	lapic_eoi();
 	return;
-    }
+	}
 
-    if (released) {
+	if (released) {
 	lapic_eoi();
 	return;
-    }
+	}
 
-    if (lastkeyentry == 0) {
+	if (lastkeyentry == 0) {
 	lastkeyentry = rdtsc();
-    } else {
+	} else {
 	uint64_t currentkeyentry = rdtsc();
 	uint64_t delta = currentkeyentry - lastkeyentry;
 	csprng_addentropy(&delta, 8);
 	lastkeyentry = currentkeyentry;
-    }
+	}
 
-    char c = decode_scancode(scancode);
-    if (c) putchar_ft(c);
+	char c = decode_scancode(scancode);
+	if (c) putchar_ft(c);
 
-    lapic_eoi();
+	lapic_eoi();
 }
