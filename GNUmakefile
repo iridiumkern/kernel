@@ -2,6 +2,7 @@ ARCH ?= x86_64
 PLATFORM ?= generic
 
 CC := clang
+CPP := clang++
 LD := ld.lld
 OBJCOPY := llvm-objcopy
 
@@ -35,12 +36,12 @@ ifeq ($(ARCH),x86_64)
 endif
 
 CC += -target $(TARGET)
+CPP += -target $(TARGET)
 
 override CFLAGS += \
 	-Wall \
 	-Wextra \
 	-Werror \
-	-std=c99 \
 	-ffreestanding \
 	-fno-stack-check \
 	-fno-PIC \
@@ -72,6 +73,9 @@ override CFLAGS += \
 	-fsanitize=implicit-integer-sign-change \
 	-fsanitize=cfi
 
+CPFLAGS = $(CFLAGS) \
+	-std=c++23 -fno-exceptions -fno-rtti
+
 override CPPFLAGS := \
 	-I$(SRC_DIR)/inc \
 	$(CPPFLAGS) \
@@ -87,20 +91,23 @@ override LDFLAGS += \
 
 GENERIC_DIR := $(SRC_DIR)/generic
 
-GENERIC_SRCFILES := $(shell find -L $(GENERIC_DIR) -type f 2>/dev/null | LC_ALL=C sort)
-ARCH_SRCFILES := $(shell find -L $(ARCH_DIR) -type f -name '*.[cS]' 2>/dev/null | LC_ALL=C sort)
+GENERIC_SRCFILES := $(shell find -L $(GENERIC_DIR) -type f \( -name '*.c' -o -name '*.cpp' \) 2>/dev/null | LC_ALL=C sort)
+ARCH_SRCFILES := $(shell find -L $(ARCH_DIR) -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.S' \) 2>/dev/null | LC_ALL=C sort)
 
 SRCFILES := $(GENERIC_SRCFILES) $(ARCH_SRCFILES)
 
 CFILES := $(filter %.c,$(SRCFILES))
+CPFILES := $(filter %.cpp,$(SRCFILES))
 ASFILES := $(filter %.S,$(SRCFILES))
 
 OBJECTS := \
 	$(patsubst $(SRC_DIR)/%.c,$(BUILD)/%.c.o,$(CFILES)) \
+	$(patsubst $(SRC_DIR)/%.cpp,$(BUILD)/%.cpp.o,$(CPFILES)) \
 	$(patsubst $(SRC_DIR)/%.S,$(BUILD)/%.S.o,$(ASFILES))
 
 HEADER_DEPS := \
 	$(patsubst $(SRC_DIR)/%.c,$(BUILD)/%.c.d,$(CFILES)) \
+	$(patsubst $(SRC_DIR)/%.cpp,$(BUILD)/%.cpp.d,$(CPFILES)) \
 	$(patsubst $(SRC_DIR)/%.S,$(BUILD)/%.S.d,$(ASFILES))
 
 .PHONY: all clean
@@ -118,7 +125,11 @@ $(KERNEL): GNUmakefile $(LINKER_SCRIPT) $(OBJECTS)
 
 $(BUILD)/%.c.o: $(SRC_DIR)/%.c GNUmakefile
 	@mkdir -p "$(dir $@)"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -std=c99 $(CPPFLAGS) -c $< -o $@
+
+$(BUILD)/%.cpp.o: $(SRC_DIR)/%.cpp GNUmakefile
+	@mkdir -p "$(dir $@)"
+	$(CPP) $(CPFLAGS) $(CPPFLAGS) -c $< -o $@
 
 $(BUILD)/%.S.o: $(SRC_DIR)/%.S GNUmakefile
 	@mkdir -p "$(dir $@)"
