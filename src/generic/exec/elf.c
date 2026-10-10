@@ -16,11 +16,14 @@
 #define ELFMAG2 'L'
 #define ELFMAG3 'F'
 
+#define R_NONE 0
 #ifdef __x86_64__
 #define ELFCLASS 2
-#define ELFDATA 1
+#define ELFDATA 1 
+#define ELF_R_NONE 0
+#define ELF_R_RELATIVE 8
 #else
-#error YOUR ARCH DOES NOT DEFINE ELFCLASS AND ELFDATA
+#error YOUR ARCH DOES NOT DEFINE 
 #endif
 
 #define EV_CURRENT 1
@@ -52,6 +55,15 @@
 #define PT_SHLIB 5
 #define PT_PHDR	6
 #define PT_TLS 7
+
+#define DT_NULL 0
+#define DT_NEEDED	1
+#define DT_RELA		7
+#define DT_RELASZ	8
+#define DT_RELAENT	9
+
+#define ELF64_R_SYM(info)	((uint32_t)((info) >> 32))
+#define ELF64_R_TYPE(info)	((uint32_t)(info))
 
 #define PF_X 0x01
 #define PF_W 0x02
@@ -107,6 +119,20 @@ typedef struct {
 	uint64_t phys_base;
 	uint64_t size;
 } Elf64_Image;
+
+typedef struct {
+	Elf64_Addr r_offset;
+	Elf64_Xword r_info;
+	Elf64_Sxword r_addend;
+} Elf64_Rela;
+
+typedef struct {
+	Elf64_Sxword d_tag;
+	union {
+		Elf64_Xword d_val;
+		Elf64_Addr d_ptr;
+	} d_un;
+} Elf64_Dyn;
 
 static uint64_t align_down(uint64_t value) {
 	return value & ~PAGE_MASK;
@@ -274,7 +300,6 @@ static bool elf_check_special_segments(const Elf64_Ehdr *hdr) {
 
 		switch (phdr->p_type) {
 			case PT_INTERP:
-			case PT_DYNAMIC:
 			case PT_SHLIB:
 			case PT_TLS: return false;
 			default: break;
@@ -357,6 +382,140 @@ static bool elf_load_segment(const Elf64_Phdr *phdr, const uint8_t *file, size_t
 		if (phdr->p_filesz > UINT64_MAX - destination) return false;
 		bss_address = destination + phdr->p_filesz;
 		memset((void *)(uintptr_t)bss_address, 0, (size_t)(phdr->p_memsz - phdr->p_filesz));
+	}
+
+	return true;
+}
+
+static bool elf_relocate(const Elf64_Ehdr *hdr, size_t file_size,
+	uint64_t load_bias, uint64_t image_low, uint64_t image_high) {
+	const Elf64_Phdr *dynamic_phdr = NULL;
+	const Elf64_Dyn *dynamic;
+	const Elf64_Rela *rela = NULL;
+	uint64_t rela_addr = 0;
+	uint64_t rela_size = 0;
+	uint64_t rela_ent = sizeof(Elf64_Rela);
+	uint64_t dynamic_addr;
+	uint64_t dynamic_size;
+	bool have_rela = false;
+	bool have_relasz = false;
+	bool have_relaent = false;
+	bool terminated = false;
+
+	for (uint16_t i = 0; i < hdr->e_phnum; i++) {
+		const Elf64_Phdr *phdr = elf_phdr(hdr, i);
+
+		if (phdr->p_type != PT_DYNAMIC) continue;
+		if (dynamic_phdr != NULL) return false;
+
+		dynamic_phdr = phdr;
+	}
+
+	if (dynamic_phdr == NULL) return true;
+	if (dynamic_phdr->p_filesz > dynamic_phdr->p_memsz) return false;
+	if (dynamic_phdr->p_filesz < sizeof(Elf64_Dyn)) return false;
+	if (dynamic_phdr->p_filesz % sizeof(Elf64_Dyn) != 0) return false;
+	if (!elf_range_valid(file_size, dynamic_phdr->p_offset,
+		dynamic_phdr->p_filesz)) return false;
+
+	if (add_overflow_u64(dynamic_phdr->p_vaddr, load_bias,
+		&dynamic_addr)) return false;
+
+	dynamic_size = dynamic_phdr->p_filesz;
+
+	if (dynamic_addr < image_low ||
+		dynamic_addr > image_high ||
+		dynamic_size > image_high - dynamic_addr) return false;
+
+	dynamic = (const Elf64_Dyn *)(uintptr_t)dynamic_addr;
+
+	for (uint64_t i = 0; i < dynamic_size / sizeof(Elf64_Dyn); i++) {
+		switch (dynamic[i].d_tag) {
+			case DT_NULL:
+				terminated = true;
+				goto dynamic_done;
+
+			case DT_NEEDED:
+				return false;
+
+			case DT_RELA:
+				if (have_rela) return false;
+				rela_addr = dynamic[i].d_un.d_ptr;
+				have_rela = true;
+				break;
+
+			case DT_RELASZ:
+				if (have_relasz) return false;
+				rela_size = dynamic[i].d_un.d_val;
+				have_relasz = true;
+				break;
+
+			case DT_RELAENT:
+				if (have_relaent) return false;
+				rela_ent = dynamic[i].d_un.d_val;
+				have_relaent = true;
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	dynamic_done:
+
+	if (!terminated) return false;
+	if (!have_rela && !have_relasz) return true;
+	if (!have_rela || !have_relasz || !have_relaent) return false;
+	if (rela_ent != sizeof(Elf64_Rela)) return false;
+	if (rela_size % rela_ent != 0) return false;
+	if (rela_size == 0) return true;
+
+	if (add_overflow_u64(rela_addr, load_bias, &rela_addr)) return false;
+	if (rela_addr < image_low ||
+		rela_addr > image_high ||
+		rela_size > image_high - rela_addr) return false;
+
+	rela = (const Elf64_Rela *)(uintptr_t)rela_addr;
+
+	for (uint64_t i = 0; i < rela_size / rela_ent; i++) {
+		uint64_t target;
+		uint64_t value;
+		uint32_t type = ELF64_R_TYPE(rela[i].r_info);
+
+		switch (type) {
+			case ELF_R_NONE:
+				break;
+
+			case ELF_R_RELATIVE:
+				if (ELF64_R_SYM(rela[i].r_info) != 0)
+					return false;
+
+				if (add_overflow_u64(load_bias,
+					rela[i].r_offset, &target)) return false;
+
+				if (target < image_low ||
+					target > image_high ||
+					sizeof(uint64_t) > image_high - target)
+					return false;
+
+				if (rela[i].r_addend < 0) {
+					uint64_t magnitude =
+						(uint64_t)(-(rela[i].r_addend + 1)) + 1;
+
+					if (magnitude > load_bias) return false;
+					value = load_bias - magnitude;
+				} else {
+					if (add_overflow_u64(load_bias,
+						(uint64_t)rela[i].r_addend,
+						&value)) return false;
+				}
+
+				*(uint64_t *)(uintptr_t)target = value;
+				break;
+
+			default:
+				return false;
+		}
 	}
 
 	return true;
@@ -612,10 +771,18 @@ uint64_t elf_load_file(const void *file, size_t file_size) {
 		goto fail;
 	}
 
+	if (!elf_relocate(hdr, file_size, load_bias,
+		relocated_low, relocated_high)) {
+		printf("ELF: failed to apply relocations\n");
+		goto fail;
+	}
+
 	if (!elf_protect_segments(hdr, load_bias)) {
 		printf("ELF: failed to apply segment permissions\n");
 		goto fail;
 	}
+
+	printf("ELF: relocations applied\n");
 
 	printf("ELF: segment permissions applied\n");
 

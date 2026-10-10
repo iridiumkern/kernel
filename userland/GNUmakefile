@@ -14,7 +14,7 @@ all: $(TARGET)
 $(TARGET): $(OBJ) linker.ld
 	$(LD) $(LDFLAGS) $(OBJ) -o $@
 
-src/%.o: src/%.c
+%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
