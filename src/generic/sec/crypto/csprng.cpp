@@ -11,11 +11,16 @@ static bool init = false;
 bool csprng_init(void) {
 	if (init) return false;
 
+	// Quick and dirty entropy
+	// CSPRNG assumes that random_u64 is perfect, whilst on real systems it is not, it is often good enough.
 	uint64_t dirtystuff[8] = {0};
 
 	for (uint8_t i = 0; i < 8; i++) {
 		if (random_u64(&dirtystuff[i]) == false) {
 			memset(dirtystuff, 0, sizeof(dirtystuff));
+			// State is assumed to be zero, but this is a just in case.
+			memset(state, 0, sizeof(state));
+			return false;
 		}
 	}
 
@@ -53,8 +58,9 @@ bool csprng_addentropy(void* data, uint64_t size) {
 }
 
 bool csprng_getrand(uint8_t *out) {
-	uint64_t output[8];
-	uint64_t newstate[8];
+	uint64_t output[8] = {0};
+	uint64_t newstate[8] = {0};
+	uint64_t oldstate[8] = {0};
 
 	if (!init) return false;
 	if (!range_is_mapped((uintptr_t)out, 64)) return false;
@@ -65,20 +71,28 @@ bool csprng_getrand(uint8_t *out) {
 	// Add some extra entropy
 	uint64_t tmpbuf;
 	if (!random_u64(&tmpbuf)) {
-	memset(output, 0, 64);
-	memset(newstate, 0, 64);
-	return false;
+		memset(&tmpbuf, 0, 8);
+		memset(output, 0, 64);
+		memset(newstate, 0, 64);
+		return false;
 	}
 
 	// Copy the new state and then add in entropy
+	memcpy(oldstate, state, 64);
 	memcpy(state, newstate, 64);
 	if (!csprng_addentropy(&tmpbuf, 8)) {
-	memset(output, 0, 64);
-	memset(newstate, 0, 64);
-	return false;
+		memcpy(state, oldstate, 64);
+		memset(&oldstate, 0, 64);
+		memset(&tmpbuf, 0, 8);
+		memset(output, 0, 64);
+		memset(newstate, 0, 64);
+		return false;
 	}
+	
 	// Zero the state from the stack
 	memcpy(out, output, 64);
+	memset(&oldstate, 0, 64);
+	memset(&tmpbuf, 0, 8);
 	memset(output, 0, 64);
 	memset(newstate, 0, 64);
 	return true;
