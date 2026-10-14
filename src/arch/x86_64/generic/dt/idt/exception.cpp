@@ -55,10 +55,11 @@ static const char* decode_exception(uint64_t exception) {
 extern "C" void exception_handler(struct interrupt_frame *frame) {
 	__asm("cli");
 	if (frame->exception_code == 1) {
-	// Debug, returns for now
-	__asm("sti");
-	return;
+		// Debug, returns for now
+		__asm("sti");
+		return;
 	}
+	// Color 2 is GREEN.
 	flanterm_set_text_bg(flantermctx, 2, false);
 	flanterm_clear(flantermctx, true);
 
@@ -80,13 +81,13 @@ extern "C" void exception_handler(struct interrupt_frame *frame) {
 
 	// Print some advice based on the issue
 	if (frame->exception_code == 2) {
-	printf("An issue occurred with hardware! Please reboot, if this issue persists please bring it to the device manufacturer or troubleshoot the harding causing the NMI.\n");
+		printf("An issue occurred with hardware! Please reboot, if this issue persists please bring it to the device manufacturer or troubleshoot the harding causing the NMI.\n");
 	}
 
 	printf("\nSystem halted.\n");
 
 	for (;;) {
-	__asm("hlt");
+		__asm("hlt");
 	}
 
 	__builtin_unreachable();

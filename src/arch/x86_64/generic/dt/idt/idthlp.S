@@ -11,7 +11,7 @@ isr_stub_\num:
 
 .macro isr_no_err_stub num
 isr_stub_\num:
-	push 0
+	push 8675309
 	push \num
 
 	mov rdi, rsp
