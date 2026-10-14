@@ -175,10 +175,12 @@ static void sha512_finalize_bytes(struct sha512 *sha, void *dst_bytes32) {
 	}
 }
 
-void sha512_bytes(const void *src, size_t n_bytes, void *dst_bytes32) {
-	struct sha512 sha;
-
-	sha512_init(&sha);
-	sha512_append(&sha, src, n_bytes);
-	sha512_finalize_bytes(&sha, dst_bytes32);
+namespace security::crypto {
+	void sha512_bytes(const void *src, size_t n_bytes, void *dst_bytes32) {
+		struct sha512 sha;
+	
+		sha512_init(&sha);
+		sha512_append(&sha, src, n_bytes);
+		sha512_finalize_bytes(&sha, dst_bytes32);
+	}
 }

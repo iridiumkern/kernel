@@ -131,12 +131,12 @@ extern "C" void kmain(void) {
 
 	heap_init();
 	
-	if (!csprng_init()) {
+	if (!security::crypto::csprng_init()) {
 		kpanic("CSPRNG_INIT FAILED!\n");
 	}
 
 	sspsetup();
-	parse_acpi();
+	acpi::parse_acpi();
 	
 	// Load userland.tar
 	if (module_request.response->module_count != 1) {

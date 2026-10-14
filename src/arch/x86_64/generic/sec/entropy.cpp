@@ -30,30 +30,32 @@ static inline bool rdrand64(uint64_t *out) {
 }
 
 // Generic function for random unsigned 64bit integers
-__attribute((optnone)) bool random_u64(uint64_t *out) {
-	uint64_t jitter1 = rdtsc();
-
-	for (uint64_t i = 0; i < (jitter1 & 0x3FF); i++);
-
-	uint64_t jitter2 = rdtsc();
-
-	uint64_t jitter = jitter1 ^ jitter2;
-
-	uint32_t eax, ebx, ecx, edx;
-
-	cpuid(1, &eax, &ebx, &ecx, &edx);
-
-	if (ecx & (1U << 30)) {
-	uint64_t value;
-
-	if (rdrand64(&value)) {
-		*out = jitter ^ value;
-	} else {
+namespace security::crypto {
+	__attribute((optnone)) bool random_u64(uint64_t *out) {
+		uint64_t jitter1 = rdtsc();
+	
+		for (uint64_t i = 0; i < (jitter1 & 0x3FF); i++);
+	
+		uint64_t jitter2 = rdtsc();
+	
+		uint64_t jitter = jitter1 ^ jitter2;
+	
+		uint32_t eax, ebx, ecx, edx;
+	
+		cpuid(1, &eax, &ebx, &ecx, &edx);
+	
+		if (ecx & (1U << 30)) {
+		uint64_t value;
+		
+		if (rdrand64(&value)) {
+			*out = jitter ^ value;
+		} else {
+			*out = jitter;
+		}
+		} else {
 		*out = jitter;
+		}
+	
+		return true;
 	}
-	} else {
-	*out = jitter;
-	}
-
-	return true;
 }

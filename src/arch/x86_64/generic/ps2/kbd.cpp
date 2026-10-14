@@ -100,23 +100,23 @@ extern "C" void ps2_kbd_drv(void) {
 	uint8_t key = scancode & 0x7F;
 
 	if (key == 0x2A || key == 0x36) {
-	shift_down = !released;
-	lapic_eoi();
-	return;
+		shift_down = !released;
+		lapic_eoi();
+		return;
 	}
 
 	if (released) {
-	lapic_eoi();
-	return;
+		lapic_eoi();
+		return;
 	}
 
 	if (lastkeyentry == 0) {
-	lastkeyentry = rdtsc();
+		lastkeyentry = rdtsc();
 	} else {
-	uint64_t currentkeyentry = rdtsc();
-	uint64_t delta = currentkeyentry - lastkeyentry;
-	csprng_addentropy(&delta, 8);
-	lastkeyentry = currentkeyentry;
+		uint64_t currentkeyentry = rdtsc();
+		uint64_t delta = currentkeyentry - lastkeyentry;
+		security::crypto::csprng_addentropy(&delta, 8);
+		lastkeyentry = currentkeyentry;
 	}
 
 	char c = decode_scancode(scancode);

@@ -6,6 +6,8 @@
 #include <stdio.hpp>
 #include <stdint.h>
 
+using namespace security::memory;
+
 #ifdef __x86_64__
 #define CPUID_7_EBX_SMAP (1U << 20)
 

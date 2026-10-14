@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+using namespace acpi;
+
 typedef struct {
 	uint8_t source;
 	uint32_t gsi;

@@ -42,6 +42,8 @@
 #define PIT_MODE_ONESHOT   0x00
 #define PIT_ACCESS_LOHI	0x30
 
+using namespace acpi;
+
 static volatile uint32_t *lapic;
 static uint64_t pit_ticks;
 

@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdio.hpp>
 
+using namespace security::memory;
+
 struct stackframe {
 	struct stackframe* rbp;
 	uint64_t rip;
@@ -14,8 +16,7 @@ void TraceStackTrace(unsigned int MaxFrames) {
 	for (unsigned int frame = 0; stk && frame < MaxFrames; ++frame) {
 		uintptr_t addr = (uintptr_t)stk;
 	
-		if ((addr & (sizeof(uintptr_t) - 1)) != 0 ||
-			!range_is_mapped(addr, sizeof(struct stackframe))) {
+		if ((addr & (sizeof(uintptr_t) - 1)) != 0 || !range_is_mapped(addr, sizeof(struct stackframe))) {
 			printf("	<invalid frame at 0x%llx>\n",
 				   (unsigned long long)addr);
 			break;
