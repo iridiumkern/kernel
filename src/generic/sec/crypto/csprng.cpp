@@ -11,12 +11,17 @@ static bool init = false;
 bool csprng_init(void) {
 	if (init) return false;
 
-	uint64_t dirtystuff = 0;
-	if (!random_u64(&dirtystuff)) return false;
+	uint64_t dirtystuff[8] = {0};
 
-	sha512_bytes((void*)&dirtystuff, 8, (void*)&state);
+	for (uint8_t i = 0; i < 8; i++) {
+		if (random_u64(&dirtystuff[i]) == false) {
+			memset(dirtystuff, 0, sizeof(dirtystuff));
+		}
+	}
 
-	memset(&dirtystuff, 0, 8);
+	sha512_bytes((void*)&dirtystuff, sizeof(dirtystuff), (void*)&state);
+
+	memset(dirtystuff, 0, sizeof(dirtystuff));
 	init = true;
 	return true;
 }
