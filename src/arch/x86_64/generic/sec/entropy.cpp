@@ -35,25 +35,23 @@ namespace security::crypto {
 		uint64_t jitter1 = rdtsc();
 	
 		for (uint64_t i = 0; i < (jitter1 & 0x3FF); i++);
-	
+		
 		uint64_t jitter2 = rdtsc();
-	
 		uint64_t jitter = jitter1 ^ jitter2;
 	
 		uint32_t eax, ebx, ecx, edx;
-	
 		cpuid(1, &eax, &ebx, &ecx, &edx);
 	
 		if (ecx & (1U << 30)) {
-		uint64_t value;
+			uint64_t value;
 		
-		if (rdrand64(&value)) {
-			*out = jitter ^ value;
-		} else {
+			if (rdrand64(&value)) {
+				*out = jitter ^ value;
+			} else {
+				*out = jitter;
+			}
+			} else {
 			*out = jitter;
-		}
-		} else {
-		*out = jitter;
 		}
 	
 		return true;

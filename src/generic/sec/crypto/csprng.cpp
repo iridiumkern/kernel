@@ -45,15 +45,15 @@ namespace security::crypto {
 
 		// Mix the hashed data with the current state
 		for (int i = 0; i < 8; i++) {
-		uint64_t extra_entropy = 0;
-		if (!random_u64(&extra_entropy)) {
-			memset(newstate, 0, 64);
-			memset(hasheddata, 0, 64);
+			uint64_t extra_entropy = 0;
+			if (!random_u64(&extra_entropy)) {
+				memset(newstate, 0, 64);
+				memset(hasheddata, 0, 64);
+				extra_entropy = 0;
+				return false;
+			}
+			newstate[i] = state[i] ^ hasheddata[i] ^ extra_entropy;
 			extra_entropy = 0;
-			return false;
-		}
-		newstate[i] = state[i] ^ hasheddata[i] ^ extra_entropy;
-		extra_entropy = 0;
 		}
 		memcpy(state, newstate, 64);
 		memset(newstate, 0, 64);

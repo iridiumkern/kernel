@@ -19,8 +19,6 @@ static volatile struct limine_rsdp_request rsdp_request = {
 	.response = NULL
 };
 
-static void* spd_pointer = NULL;
-
 static int checksum_valid(const void *ptr, size_t len) {
 	const uint8_t *bytes = (const uint8_t *)ptr;
 	uint8_t sum = 0;
@@ -95,8 +93,6 @@ namespace acpi {
 		if (sdp_valid((const struct RSDP_t*)rsdp_request.response->address) == false) {
 			return ACPI_ERROR;
 		}
-
-		spd_pointer = rsdp_request.response->address;
 
 		if (((struct RSDP_t*)rsdp_request.response->address)->Revision == 0) {
 			// ACPI 1.0

@@ -140,21 +140,21 @@ static uint64_t align_down(uint64_t value) {
 
 static bool align_up(uint64_t value, uint64_t *result) {
 	if (value > UINT64_MAX - PAGE_MASK) return false;
-	*result = (value + PAGE_MASK) & ~PAGE_MASK;
+		*result = (value + PAGE_MASK) & ~PAGE_MASK;
 
 	return true;
 }
 
 static bool add_overflow_u64(uint64_t a, uint64_t b, uint64_t *result) {
 	if (b > UINT64_MAX - a) return true;
-	*result = a + b;
+		*result = a + b;
 
 	return false;
 }
 
 static bool mul_overflow_u64(uint64_t a, uint64_t b, uint64_t *result) {
 	if (a != 0 && b > UINT64_MAX / a) return true;
-	*result = a * b;
+		*result = a * b;
 
 	return false;
 }

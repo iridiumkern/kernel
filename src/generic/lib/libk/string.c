@@ -16,7 +16,7 @@ void *memset(void *s, int c, size_t n) {
 	uint8_t *p = (uint8_t*)s;
 
 	for (size_t i = 0; i < n; i++) {
-	p[i] = (uint8_t)c;
+		p[i] = (uint8_t)c;
 	}
 
 	return s;
@@ -64,10 +64,9 @@ char *strcat(char *dest, const char *src) {
 	char *ret = dest;
 
 	while (*dest)
-	dest++;
+		dest++;
 
-	while ((*dest++ = *src++))
-	;
+	while ((*dest++ = *src++));
 
 	return ret;
 }
@@ -76,7 +75,7 @@ size_t strlen(const char *str) {
 	size_t len = 0;
 
 	while (str[len] != '\0')
-	len++;
+		len++;
 
 	return len;
 }

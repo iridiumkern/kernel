@@ -17,8 +17,7 @@ void TraceStackTrace(unsigned int MaxFrames) {
 		uintptr_t addr = (uintptr_t)stk;
 	
 		if ((addr & (sizeof(uintptr_t) - 1)) != 0 || !range_is_mapped(addr, sizeof(struct stackframe))) {
-			printf("	<invalid frame at 0x%llx>\n",
-				   (unsigned long long)addr);
+			printf("	<invalid frame at 0x%llx>\n", (unsigned long long)addr);
 			break;
 		}
 	

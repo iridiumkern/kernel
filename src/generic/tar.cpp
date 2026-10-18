@@ -55,10 +55,10 @@ uintptr_t tar_init(uintptr_t address) {
 struct tar_wrapper *tar_getfile(const char* name) {
 	struct tar_wrapper *next = rootentry;
 	while (next != NULL) {
-	if (memcmp(name, next->h.filename, strlen(name)) == 0) {
-		return next;
-	}
-	next = next->next;
+		if (memcmp(name, next->h.filename, strlen(name)) == 0) {
+			return next;
+		}
+		next = next->next;
 	}
 
 	return NULL;

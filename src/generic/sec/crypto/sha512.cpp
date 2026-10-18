@@ -30,15 +30,7 @@ static inline void update_w(uint64_t *w, int i, const uint8_t *buffer) {
 	int j;
 	for(j = 0;j < 16;j++) {
 		if (i < 16) {
-			w[j] =
-		((uint64_t)buffer[0] << (8*7)) |
-		((uint64_t)buffer[1] << (8*6)) |
-		((uint64_t)buffer[2] << (8*5)) |
-		((uint64_t)buffer[3] << (8*4)) |
-		((uint64_t)buffer[4] << (8*3)) |
-		((uint64_t)buffer[5] << (8*2)) |
-		((uint64_t)buffer[6] << (8*1)) |
-		((uint64_t)buffer[7] << (8*0));
+			w[j] = ((uint64_t)buffer[0] << (8*7)) | ((uint64_t)buffer[1] << (8*6)) | ((uint64_t)buffer[2] << (8*5)) | ((uint64_t)buffer[3] << (8*4)) | ((uint64_t)buffer[4] << (8*3)) | ((uint64_t)buffer[5] << (8*2)) | ((uint64_t)buffer[6] << (8*1)) | ((uint64_t)buffer[7] << (8*0));
 			buffer += 8;
 		} else {
 			uint64_t a = w[(j + 1) & 15];
@@ -87,7 +79,7 @@ static void sha512_block(struct sha512 *sha) {
 	for(i = 0;i < 80;i += 16) {
 		update_w(w, i, sha->buffer);
 
-#pragma clang loop unroll(full)
+	#pragma clang loop unroll(full)
 		for(j = 0;j < 16;j += 4) {
 			uint64_t temp;
 			temp = h + step1(e, f, g) + k[i + j + 0] + w[j + 0];

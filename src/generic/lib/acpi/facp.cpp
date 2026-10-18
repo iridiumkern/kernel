@@ -7,14 +7,14 @@
 namespace acpi {
 	void parse_facp(void* facpptr) {
 		if (!facpptr) {
-		kpanic("FACP pointer is NULL!\nPTR = %llx\n", facpptr);
+			kpanic("FACP pointer is NULL!\nPTR = %llx\n", facpptr);
 		}
 		struct FADT *fadt = (struct FADT*)facpptr;
 	
 		if (fadt->h.Revision == 2) {
-		printf("DSDT at: %llx\n", krnl.hhdm_offset + fadt->X_Dsdt);
+			printf("DSDT at: %llx\n", krnl.hhdm_offset + fadt->X_Dsdt);
 		} else if (fadt->h.Revision == 0 || fadt->h.Revision == 1) {
-		printf("DSDT at: %llx\n", krnl.hhdm_offset + fadt->Dsdt);
+			printf("DSDT at: %llx\n", krnl.hhdm_offset + fadt->Dsdt);
 		}
 	
 		printf("PreferredPowerManagementProfile: ");

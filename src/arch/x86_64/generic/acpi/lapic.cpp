@@ -51,10 +51,10 @@ void pit_prepare_sleep(uint32_t usec) {
 	uint64_t ticks = (PIT_FREQUENCY * usec) / 1000000ULL;
 
 	if (ticks == 0)
-	ticks = 1;
+		ticks = 1;
 
 	if (ticks > 65536)
-	ticks = 65536;
+		ticks = 65536;
 
 	outb(PIT_COMMAND, 0x30);
 
@@ -69,7 +69,7 @@ void pit_perform_sleep(void) {
 	outb(PIT_COMMAND, 0xE2);
 
 	while (!(inb(PIT_CHANNEL0) & 0x80))
-	__asm__ volatile ("pause");
+		__asm__ volatile ("pause");
 }
 
 static inline uint32_t lapic_read(uint32_t reg) {
@@ -125,34 +125,34 @@ void lapic_init(struct madt* madt, uint64_t lapic_virtual) {
 
 	// Parses all entries that the madt parser can find
 	while (entry != NULL) {
-	// If a MADT entry is corrupt we panic
-	// Since if this basic ACPI table is corrupted it is very possible that other tables are broken
-	if (!madt_entry_valid(madt, entry)) {
-		kpanic("MADT entry is invalid!\n");
-	}
+		// If a MADT entry is corrupt we panic
+		// Since if this basic ACPI table is corrupted it is very possible that other tables are broken
+		if (!madt_entry_valid(madt, entry)) {
+			kpanic("MADT entry is invalid!\n");
+		}
 
-	if (entry->type == MADT_TYPE_LOCAL_NMI) {
-		struct madt_local_nmi *nmi =
-			(struct madt_local_nmi *)entry;
-	
-		printf("FOUND LNMI: processor=%u lint=%u flags=%x\n", nmi->processor_id, nmi->lint, nmi->flags);
+		if (entry->type == MADT_TYPE_LOCAL_NMI) {
+			struct madt_local_nmi *nmi =
+				(struct madt_local_nmi *)entry;
 		
-		uint32_t lvt;
+			printf("FOUND LNMI: processor=%u lint=%u flags=%x\n", nmi->processor_id, nmi->lint, nmi->flags);
+			
+			uint32_t lvt;
+			
+			if (nmi->lint == 0) {
+				lvt = LAPIC_LVT_LINT0;
+			} else if (nmi->lint == 1) {
+				lvt = LAPIC_LVT_LINT1;
+			} else {
+				kpanic("Invalid LAPIC LINT number!\n");
+			}
 		
-		if (nmi->lint == 0) {
-			lvt = LAPIC_LVT_LINT0;
-		} else if (nmi->lint == 1) {
-			lvt = LAPIC_LVT_LINT1;
-		} else {
-			kpanic("Invalid LAPIC LINT number!\n");
+			// NMI delivery.
+			lapic_write(lvt, LAPIC_NMI);
 		}
 	
-		// NMI delivery.
-		lapic_write(lvt, LAPIC_NMI);
-	}
-
-	// Find the next entry
-	entry = madt_next(madt, entry);
+		// Find the next entry
+		entry = madt_next(madt, entry);
 	}
 
 	printf("LAPIC: initialized\n");

@@ -14,17 +14,13 @@ extern void ioapic_register_iso(uint8_t source, uint32_t gsi);
 namespace acpi {
 	acpi_ret madt_parse(struct acpi::madt* madt) {
 		if (!madt) {
-		// Used for when a feature and or table or other thing is not there/available
-		return ACPI_MISSING;
+			// Used for when a feature and or table or other thing is not there/available
+			return ACPI_MISSING;
 		}
 	
 		uint32_t eax, ebx, ecx, edx;
 	
-		__asm__ volatile (
-		"cpuid"
-		: "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-		: "a"(1)
-		);
+		__asm__ volatile ("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(1));
 	
 		uint32_t bsp_apic_id = ebx >> 24;
 	
@@ -45,14 +41,14 @@ namespace acpi {
 			
 				// Sets up the BSP lapic
 				if (lapic->apic_id == bsp_apic_id) {
-				if (madt->lapicaddr == 0) {
-					kpanic("madt->lapicaddr == 0");
-				}
-				// Map the lapic address
-				uint64_t page = vmm_find_free_pages(1, false);
-				vmm_map(page, madt->lapicaddr, VMM_P | VMM_RW);
+					if (madt->lapicaddr == 0) {
+						kpanic("madt->lapicaddr == 0");
+					}
+					// Map the lapic address
+					uint64_t page = vmm_find_free_pages(1, false);
+					vmm_map(page, madt->lapicaddr, VMM_P | VMM_RW);
 			
-				lapic_init(madt, page);
+					lapic_init(madt, page);
 				}
 			} else if (entry->type == MADT_TYPE_ISO) {
 				// Registers an ISO
