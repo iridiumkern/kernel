@@ -1,7 +1,7 @@
 #include <sec/random.hpp>
-#include <stdint.h>
 #include <stdbool.h>
 #include <panic.hpp>
+#include <stdint.h>
 
 uintptr_t __stack_chk_guard = 0x595e9fbd94fda766;
 

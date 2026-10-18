@@ -1,7 +1,7 @@
 // Thanks OSDev wiki!
 
-#include <stdint.h>
 #include <x86_64/io.hpp>
+#include <stdint.h>
 
 #define PORT 0x3f8	  // COM1
 

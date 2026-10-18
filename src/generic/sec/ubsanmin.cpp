@@ -10,8 +10,8 @@
  */
 
 #include "../lib/flanterm/src/flanterm.h"
-#include <stdint.h>
 #include <stdio.hpp>
+#include <stdint.h>
 
 extern void print_logo(void);
 

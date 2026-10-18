@@ -1,8 +1,8 @@
-#include <debug.hpp>
 #include <x86_64/vmm.hpp>
-#include <stddef.h>
 #include <acpi/types.hpp>
 #include <acpi/madt.hpp>
+#include <debug.hpp>
+#include <stddef.h>
 #include <panic.hpp>
 #include <stdint.h>
 #include <kernel.hpp>

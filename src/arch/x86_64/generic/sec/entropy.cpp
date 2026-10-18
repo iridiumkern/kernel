@@ -1,7 +1,7 @@
+#include <x86_64/cpuid.hpp>
 #include <immintrin.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <x86_64/cpuid.hpp>
 
 // Reads from the TSC
 uint64_t rdtsc(void) {

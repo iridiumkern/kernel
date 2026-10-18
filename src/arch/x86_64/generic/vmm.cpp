@@ -4,9 +4,9 @@
 #include <stdio.hpp>
 #include <panic.hpp>
 
+#include <x86_64/vmm.hpp>
 #include <kernel.hpp>
 #include <pmm.hpp>
-#include <x86_64/vmm.hpp>
 
 #define PT_ENTRIES 512
 #define PAGE_MASK  0x000FFFFFFFFFF000ULL

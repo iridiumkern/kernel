@@ -1,8 +1,8 @@
-#include <stdio.hpp>
-#include <panic.hpp>
 #include <acpi/facp.hpp>
 #include <acpi/sdt.hpp>
 #include <kernel.hpp>
+#include <stdio.hpp>
+#include <panic.hpp>
 
 namespace acpi {
 	void parse_facp(void* facpptr) {

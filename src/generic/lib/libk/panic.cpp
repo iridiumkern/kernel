@@ -1,6 +1,6 @@
+#include "../flanterm/src/flanterm.h"
 #include <panic.hpp>
 #include <stdio.hpp>
-#include "../flanterm/src/flanterm.h"
 
 extern struct flanterm_context *flantermctx;
 extern void print_logo(void);

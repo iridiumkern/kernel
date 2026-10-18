@@ -1,8 +1,8 @@
+#include <limine.hpp>
+#include <panic.hpp>
 #include <stdio.hpp>
 #include <stdint.h>
 #include <stddef.h>
-#include <panic.hpp>
-#include <limine.hpp>
 
 #define PAGE_SIZE	   4096ULL
 #define MAX_PHYS_MEM	(64ULL * 1024 * 1024 * 1024)

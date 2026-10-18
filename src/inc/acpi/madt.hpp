@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <acpi/sdt.hpp>
 #include <acpi/types.hpp>
+#include <acpi/sdt.hpp>
+#include <stdbool.h>
+#include <stdint.h>
 
 namespace acpi {
 	#define MADT_TYPE_LOCAL_APIC	   0

@@ -18,9 +18,9 @@
 
 #include <sec/random.hpp>
 #include <scheduler.hpp>
-#include <string.h>
 #include <debug.hpp>
 #include <panic.hpp>
+#include <string.h>
 #include <pmm.hpp>
 #include <tar.hpp>
 #include <elf.hpp>

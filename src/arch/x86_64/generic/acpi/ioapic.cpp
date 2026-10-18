@@ -1,7 +1,7 @@
-#include <stdio.hpp>
-#include <panic.hpp>
 #include <acpi/madt.hpp>
 #include <x86_64/io.hpp>
+#include <stdio.hpp>
+#include <panic.hpp>
 #include <stdint.h>
 #include <stddef.h>
 

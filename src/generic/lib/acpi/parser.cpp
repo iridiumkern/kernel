@@ -1,16 +1,16 @@
 #include <acpi/madt.hpp>
-#include <string.h>
 #include <acpi/facp.hpp>
 #include <acpi/sdt.hpp>
+#include <kernel.hpp>
+#include <acpi/sdp.hpp>
+#include <acpi/types.hpp>
+#include <limine.hpp>
 #include <stdbool.h>
 #include <stdio.hpp>
 #include <panic.hpp>
-#include <stddef.h>
-#include <kernel.hpp>
-#include <acpi/sdp.hpp>
-#include <limine.hpp>
-#include <acpi/types.hpp>
 #include <debug.hpp>
+#include <string.h>
+#include <stddef.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile struct limine_rsdp_request rsdp_request = {

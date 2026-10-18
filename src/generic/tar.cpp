@@ -1,8 +1,8 @@
-#include <string.h>
 #include <stdlib.hpp>
+#include <panic.hpp>
+#include <string.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <panic.hpp>
 #include <tar.hpp>
 
 struct tar_wrapper *rootentry = NULL;

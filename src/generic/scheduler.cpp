@@ -1,8 +1,8 @@
 #include <scheduler.hpp>
 #include <stdlib.hpp>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 static process_t *rootproc = NULL;
 static process_t *nextproc = NULL;

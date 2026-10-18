@@ -1,5 +1,5 @@
-#include <stdio.hpp>
 #include "../../src/generic/lib/flanterm/src/flanterm.h"
+#include <stdio.hpp>
 
 extern struct flanterm_context *flantermctx;
 extern void TraceStackTrace(unsigned int MaxFrames);

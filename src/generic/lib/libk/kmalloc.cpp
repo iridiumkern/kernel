@@ -1,7 +1,7 @@
+#include <stdbool.h>
 #include <panic.hpp>
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
 
 #include <pmm.hpp>
 #ifdef __x86_64__

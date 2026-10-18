@@ -1,9 +1,8 @@
 #pragma once
-
-#include <stdint.h>
 #include <acpi/types.hpp>
 #include <acpi/sdt.hpp>
 #include <stdbool.h>
+#include <stdint.h>
 
 namespace acpi {
 	/**

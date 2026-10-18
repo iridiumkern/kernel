@@ -1,7 +1,7 @@
 #include <sec/random.hpp>
+#include <x86_64/io.hpp>
 #include <stdbool.h>
 #include <stdio.hpp>
-#include <x86_64/io.hpp>
 
 extern void lapic_eoi(void);
 extern uint64_t rdtsc(void);

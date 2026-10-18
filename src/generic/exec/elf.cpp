@@ -1,8 +1,8 @@
-#include <string.h>
+#include <stdio.hpp>
 #include <stdbool.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.hpp>
 #include <pmm.hpp>
 
 #ifdef __x86_64__
