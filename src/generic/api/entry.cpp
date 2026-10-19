@@ -3,8 +3,8 @@
 #include <scheduler.hpp>
 #include <panic.hpp>
 #include <debug.hpp>
-#include <stdio.hpp>
 #include <stdint.h>
+#include <vfs.hpp>
 
 using namespace security::memory;
 
@@ -33,24 +33,20 @@ static inline void usermemorylock(void) {
 }
 
 extern "C" bool apisyscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t arg6) {
-	(void)arg5;
+	bool ret = false;
 	(void)arg6;
 	// Output
 	if (arg1 == 0) {
-			if (arg2 == 0) {
-			// Checks if the page is mapped and if the page is userland
-			if (!range_is_mapped(arg3, arg4) || !range_is_user(arg3, arg4)) {
-				return false;
-			}
-
-			// Enables userland memory access then prints the string, then disables userland memory access
+		if (arg2 == 0) {
+			// Write to VFS
+			// Arg3 is FD
+			// Arg4 is buffer pointer
+			// Arg5 is size
+			// User is set to true to make sure its safe
 			usermemoryacc();
-			for (uint64_t i = 0; i < arg4; i++) {
-				putchar_ft(*(const char*)arg3++);
-			}
+			ret = vfs::write(arg3, (void*)arg4, arg5, true);
 			usermemorylock();
-			return true;
 		}
 	}
-	return false;
+	return ret;
 }
