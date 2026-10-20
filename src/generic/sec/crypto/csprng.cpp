@@ -41,6 +41,7 @@ namespace security::crypto {
 
 		uint64_t hasheddata[8] = {0};
 		uint64_t newstate[8] = {0};
+		uint64_t flashstate[8] = {0};
 		sha512_bytes(data, size, (void*)&hasheddata);
 
 		// Mix the hashed data with the current state
@@ -55,7 +56,11 @@ namespace security::crypto {
 			newstate[i] = state[i] ^ hasheddata[i] ^ extra_entropy;
 			extra_entropy = 0;
 		}
-		memcpy(state, newstate, 64);
+
+		sha512_bytes(&newstate, 64, &flashstate);
+
+		memcpy(state, flashstate, 64);
+		memset(flashstate, 0, 64);
 		memset(newstate, 0, 64);
 		memset(hasheddata, 0, 64);
 		return true;
