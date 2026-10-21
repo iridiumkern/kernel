@@ -157,11 +157,11 @@ namespace {
 		}
 
 		/**
-		 * @brief Tokenizes a string
+		 * @brief Tokenizes a string, each token seperated by '/'
 		 * 
-		 * @param str 
-		 * @param tokens 
-		 * @return size_t 
+		 * @param str The string to search for tokens in
+		 * @param tokens The output array of the tokens
+		 * @return size_t The token count.
 		 */
 		size_t tokenize(const char *str, char **tokens) {
 			if (str == NULL || tokens == NULL)
