@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <stdio.hpp>
 #include <panic.hpp>
-#include <debug.hpp>
 #include <string.h>
 #include <stddef.h>
 

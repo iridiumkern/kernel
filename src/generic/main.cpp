@@ -18,12 +18,12 @@
 
 #include <sec/random.hpp>
 #include <scheduler.hpp>
-#include <debug.hpp>
 #include <panic.hpp>
 #include <string.h>
 #include <pmm.hpp>
 #include <tar.hpp>
 #include <elf.hpp>
+#include <vfs.hpp>
 
 #ifdef __x86_64__
 #include <x86_64/schedarch.hpp>
@@ -137,6 +137,8 @@ extern "C" void kmain(void) {
 
 	sspsetup();
 	acpi::parse_acpi();
+
+	vfs::vfs_init();
 	
 	// Load userland.tar
 	if (module_request.response->module_count != 1) {

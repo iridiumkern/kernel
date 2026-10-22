@@ -2,7 +2,6 @@
 #include <sec/random.hpp>
 #include <scheduler.hpp>
 #include <panic.hpp>
-#include <debug.hpp>
 #include <stdint.h>
 #include <vfs.hpp>
 
