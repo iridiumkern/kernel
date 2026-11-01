@@ -71,6 +71,15 @@ char *strcat(char *dest, const char *src);
  */
 size_t strlen(const char *str);
 
+/**
+ * @brief Compares two null terminated strings
+ * 
+ * @param s1 String 1
+ * @param s2 String 2
+ * @return int 0 if they match, otherwise not
+ */
+int strcmp(const char *s1, const char *s2);
+
 #ifdef __cplusplus
 }
 #endif

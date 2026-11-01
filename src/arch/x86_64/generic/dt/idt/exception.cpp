@@ -1,20 +1,9 @@
 #include "../../src/generic/lib/flanterm/src/flanterm.h"
+#include "exception.h"
 #include <stdio.hpp>
 
 extern struct flanterm_context *flantermctx;
 extern void TraceStackTrace(unsigned int MaxFrames);
-
-struct interrupt_frame {
-	uint64_t exception_code;
-	uint64_t errorcode;
-	uint64_t rip;
-	uint64_t cs;
-	uint64_t rflags;
-
-	// Priv change
-	uint64_t rsp;
-	uint64_t ss;
-};
 
 static inline uint64_t read_cr2(void) {
 	uint64_t value;
@@ -52,6 +41,10 @@ static const char* decode_exception(uint64_t exception) {
 	}
 }
 
+#ifdef DEBUG
+extern "C" void debug_shell_enter(struct interrupt_frame *frame);
+#endif
+
 extern "C" void exception_handler(struct interrupt_frame *frame) {
 	__asm("cli");
 	if (frame->exception_code == 1) {
@@ -83,6 +76,10 @@ extern "C" void exception_handler(struct interrupt_frame *frame) {
 	if (frame->exception_code == 2) {
 		printf("An issue occurred with hardware! Please reboot, if this issue persists please bring it to the device manufacturer or troubleshoot the harding causing the NMI.\n");
 	}
+
+	#ifdef DEBUG
+	debug_shell_enter(frame);
+	#endif
 
 	printf("\nSystem halted.\n");
 
