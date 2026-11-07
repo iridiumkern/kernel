@@ -421,8 +421,6 @@ namespace vfs {
 		mounted_fs* next;
 	};
 
-	static struct fd_entry *root_fd = NULL;
-
 	struct mounted_fs *rootfs = NULL;
 
 	uint64_t nextid = 0;
