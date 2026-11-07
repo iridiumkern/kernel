@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <panic.hpp>
+#include <string.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -129,6 +130,7 @@ void free(void *ptr) {
 
 	heap_block_t *block = ((heap_block_t *)ptr) - 1;
 
+	memset(ptr, 0, block->size);
 	block->free = true;
 
 	merge_next(block);

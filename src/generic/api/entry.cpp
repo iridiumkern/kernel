@@ -33,19 +33,20 @@ static inline void usermemorylock(void) {
 
 extern "C" bool apisyscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t arg6) {
 	bool ret = false;
-	(void)arg6;
-	// Output
+	// I/O
 	if (arg1 == 0) {
 		if (arg2 == 0) {
 			// Write to VFS
 			// Arg3 is FD
 			// Arg4 is buffer pointer
 			// Arg5 is size
+			// Arg6 is fsid
 			// User is set to true to make sure its safe
 			usermemoryacc();
-			ret = vfs::write(arg3, (void*)arg4, arg5, true);
+			ret = vfs::write(arg3, (void*)arg4, arg5, true, arg6);
 			usermemorylock();
 		}
 	}
+
 	return ret;
 }

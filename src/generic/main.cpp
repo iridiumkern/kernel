@@ -122,6 +122,9 @@ extern "C" void kmain(void) {
 	print_logo();
 	printf("Iridium %s\n", MAJORVER "." MINORVER "-" GIT_HASH " (" GIT_BRANCH ")");
 	printf("Iridium is brought to you under the GPLv3!\n");
+	#ifdef DEBUG
+	printf("This build was compiled as a DEBUG build and therefore should not be used for any security purposes, key generation and other such things are likely able to be compromised!\n");
+	#endif
 	
 	kinit();
 	pmm_init();

@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <vfs.hpp>
 
 using namespace security::memory;
 
@@ -200,6 +201,52 @@ namespace {
 			return newnode;
 		}
 
+		bool destroy_node(struct node *target) {
+			if (!init || target == NULL || target == rootnode)
+				return false;
+		
+			// Remove the node from its parent's linked list.
+			struct node *parent = target->parentnode;
+			if (parent == NULL)
+				return false;
+		
+			struct node *current = parent->childnoderoot;
+			struct node *previous = NULL;
+		
+			while (current != NULL && current != target) {
+				previous = current;
+				current = current->nextnode;
+			}
+		
+			if (current == NULL)
+				return false;
+		
+			if (previous == NULL)
+				parent->childnoderoot = target->nextnode;
+			else
+				previous->nextnode = target->nextnode;
+		
+			// Recursively destroy all children.
+			struct node *child = target->childnoderoot;
+		
+			while (child != NULL) {
+				struct node *next = child->nextnode;
+			
+				destroy_node(child);
+			
+				child = next;
+			}
+		
+			// Free file contents.
+			if (target->data != NULL)
+				free(target->data);
+		
+			// Destroy the node itself.
+			free(target);
+		
+			return true;
+		}
+
 		/**
 		 * @brief Tokenizes a string, tokens seperated by '/' character
 		 * 
@@ -367,7 +414,35 @@ namespace {
 }
 
 namespace vfs {
+	// Will be expanded
+	struct mounted_fs {
+		uint64_t id;
+		bool isramfs;
+		mounted_fs* next;
+	};
+
+	static struct fd_entry *root_fd = NULL;
+
+	struct mounted_fs *rootfs = NULL;
+
+	uint64_t nextid = 0;
+
+	uint64_t getid(void) {
+		uint64_t ret = nextid;
+		nextid++;
+		return ret;
+	}
+
 	bool vfs_init(void) {
+		// Setup mounted_fs, points to RAMFS (toggles isramfs)
+		rootfs = (mounted_fs*)malloc(sizeof(mounted_fs));
+		if (rootfs == NULL) {
+			kpanic("OOM when allocating rootfs!");
+		}
+		rootfs->isramfs = true;
+		rootfs->id = getid();
+		rootfs->next = NULL;
+
 		// Sets up the RAMFS.
 		if (!ramfs::ramfs_init()) return false;
 
@@ -422,10 +497,14 @@ namespace vfs {
 
 		debug::hexdump(log->data, log->size);
 
+		if (!ramfs::destroy_node(log)) {
+			kpanic("Failed to destroy RamFS node.");
+		}
+
 		return true;
 	}
 
-	bool write(uint64_t fd, void* buf, size_t bufsize, bool user) {
+	bool write(uint64_t fd, void* buf, size_t bufsize, bool user, uint64_t fsid) {
 		// Print to STDOUT
 		if (fd == 0) {
 			if (range_is_mapped((uintptr_t)buf, bufsize)) {
@@ -439,6 +518,21 @@ namespace vfs {
 				}
 
 				return true;
+			}
+
+			struct mounted_fs *targetfs = rootfs;
+			
+			while (targetfs != NULL && targetfs->id != fsid) {
+				targetfs = targetfs->next;
+			}
+
+			if (targetfs == NULL) {
+				return false;
+			}
+
+			if (targetfs->isramfs == true) {
+				// Write to the ramfs, too lazy to implement this right now so...
+				return false;
 			}
 		}
 
