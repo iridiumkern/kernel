@@ -15,6 +15,16 @@ namespace security::memory {
 	bool range_is_mapped(uintptr_t start, uintptr_t size);
 
 	/**
+	 * @brief Checks if a range of memory is mapped as RW
+	 * 
+	 * @param start The (unaligned) start
+	 * @param size The size (unaligned)
+	 * @return true Is writable
+	 * @return false Is not writable
+	 */
+	bool range_is_write(uintptr_t start, uintptr_t size);
+
+	/**
 	 * @brief Checks if a page is mapped/setup for the userland
 	 * 
 	 * @param start The start of the memory range (does not need alignment)

@@ -8,9 +8,7 @@ Iridium is my hobbyist kernel. It is a WIP system. More to come in this readme a
 
 ## Stance on AI
 
-AI was used in early development of the kernel, though AI usage is now no longer practiced and is in fact banned. Many older bits of code are being reworked so they no longer reflect the poor choices of AI usage.
-
-AI assisted code is the exception, however you must heavily review the code, and explain exactly what it does without using AI to write the PR, if AI is used at a level where its broken, buggy, insecure, etc, it should not be touched, if it is AI written text it will also be rejected, human comments only, ASCII characters only, I feel this goes without saying, DONT FUCKING LIE.
+AI was used in early development of the kernel, though AI usage is now no longer practiced and is in fact banned. Many older bits of code are being reworked so they no longer reflect the poor choices of AI usage. So to put it bluntly, FUCK AI.
 
 ## The CSPRNG
 

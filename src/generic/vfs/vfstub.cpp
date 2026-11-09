@@ -14,6 +14,7 @@
 // The VFS is going to not be UNIX like and instead inspired by windows.
 
 #include <sec/memory.hpp>
+#include <scheduler.hpp>
 #include <stdlib.hpp>
 #include <panic.hpp>
 #include <stdio.hpp>
@@ -56,7 +57,7 @@ namespace {
 		 * 
 		 */
 		struct nodeinfo {
-			uint64_t uid;
+			uint64_t uid; // Owner of the node.
 		};
 
 		/**
@@ -421,14 +422,43 @@ namespace vfs {
 		mounted_fs* next;
 	};
 
+	struct file_descriptor {
+		uint64_t fd;
+		uint64_t owner_pid;
+		void* data; // Depends on filesystem, for the RAMFS its just a node*
+		uint8_t flags; // 255 possible flags, none exist yet, all files are R/W
+
+		uint64_t fsid;
+		struct file_descriptor *next;
+	};
+
 	struct mounted_fs *rootfs = NULL;
+	struct file_descriptor *fdroot = NULL;
 
 	uint64_t nextid = 0;
+	uint64_t nextfd = 1;
+
+	uint64_t getfd(void) {
+		return nextfd++;
+	}
 
 	uint64_t getid(void) {
 		uint64_t ret = nextid;
 		nextid++;
 		return ret;
+	}
+
+	static file_descriptor* getfd(uint64_t fd) {
+		file_descriptor *current = fdroot;
+
+		while (current != NULL) {
+			if (current->fd == fd)
+				return current;
+
+			current = current->next;
+		}
+
+		return NULL;
 	}
 
 	bool vfs_init(void) {
@@ -502,7 +532,113 @@ namespace vfs {
 		return true;
 	}
 
-	bool write(uint64_t fd, void* buf, size_t bufsize, bool user, uint64_t fsid) {
+	bool open(uint64_t *fdret, const char* path, uint64_t fsid) {
+		if (fdret == NULL || path == NULL)
+			return false;
+
+		if (!range_is_mapped((uintptr_t)fdret, sizeof(*fdret)))
+			return false;
+
+		// Find the requested filesystem.
+		struct mounted_fs *targetfs = rootfs;
+
+		while (targetfs != NULL && targetfs->id != fsid)
+			targetfs = targetfs->next;
+
+		if (targetfs == NULL)
+			return false;
+
+		// Resolve the path.
+		if (targetfs->isramfs) {
+			struct ramfs::node *targetnode = ramfs::backtrack_from_path(path);
+			thread_t *thread = get_current_thread();
+			if (thread == NULL) {
+				return false;
+			}
+
+			if (targetnode == NULL)
+				return false;
+
+			// Allocate a file descriptor.
+			struct file_descriptor *newfd = (struct file_descriptor*)malloc(sizeof(struct file_descriptor));
+
+			if (newfd == NULL)
+				return false;
+
+			memset(newfd, 0, sizeof(struct file_descriptor));
+
+			newfd->fd = getfd();
+			newfd->data = targetnode;
+			newfd->owner_pid = thread->owner->pid;
+			newfd->flags = 0;
+
+			// Insert into the global descriptor list.
+			newfd->next = fdroot;
+			newfd->fsid = targetfs->id;
+			fdroot = newfd;
+
+			*fdret = newfd->fd;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool read(uint64_t fd, void* buf, size_t bufsize) {
+		if (fd == 0) {
+			return false; // Cannot read from STDOUT
+		}
+
+		struct mounted_fs *targetfs = rootfs;
+
+		file_descriptor *filedesc = getfd(fd);
+		if (filedesc == NULL) {
+			return false;
+		}
+
+		thread_t *thread = get_current_thread();
+		if (thread == NULL) {
+			return false;
+		}
+			
+		while (targetfs != NULL && targetfs->id != filedesc->fsid) {
+			targetfs = targetfs->next;
+		}
+
+		if (targetfs == NULL) {
+			return false;
+		}
+
+		if (targetfs->isramfs) {
+			if (filedesc->owner_pid != thread->owner->pid || filedesc->data == NULL || !range_is_mapped((uintptr_t)buf, bufsize)) {
+				return false;
+			}
+
+			struct ramfs::node *node = (ramfs::node*)filedesc->data;
+			if (node == NULL) {
+				return false;
+			}
+
+			if (!security::memory::range_is_mapped((uintptr_t)node->data, node->size)) {
+				return false;
+			}
+
+			if (!security::memory::range_is_write((uintptr_t)node->data, node->size)) {
+				return false;
+			}
+
+			if (bufsize < node->size) {
+				return false;
+			}
+
+			// Copy into RW buffer.
+			memcpy(buf, node->data, bufsize);
+		}
+
+		return true;
+	}
+
+	bool write(uint64_t fd, void* buf, size_t bufsize, bool user) {
 		// Print to STDOUT
 		if (fd == 0) {
 			if (range_is_mapped((uintptr_t)buf, bufsize)) {
@@ -517,23 +653,78 @@ namespace vfs {
 
 				return true;
 			}
+		}
 
-			struct mounted_fs *targetfs = rootfs;
+		struct mounted_fs *targetfs = rootfs;
+
+		file_descriptor *filedesc = getfd(fd);
+		if (filedesc == NULL) {
+			return false;
+		}
+
+		thread_t *thread = get_current_thread();
+		if (thread == NULL) {
+			return false;
+		}
 			
-			while (targetfs != NULL && targetfs->id != fsid) {
-				targetfs = targetfs->next;
-			}
+		while (targetfs != NULL && targetfs->id != filedesc->fsid) {
+			targetfs = targetfs->next;
+		}
 
-			if (targetfs == NULL) {
+		if (targetfs == NULL) {
+			return false;
+		}
+
+		if (targetfs->isramfs == true) {
+			if (filedesc->owner_pid != thread->owner->pid || filedesc->data == NULL || !range_is_mapped((uintptr_t)buf, bufsize)) {
 				return false;
 			}
 
-			if (targetfs->isramfs == true) {
-				// Write to the ramfs, too lazy to implement this right now so...
+			struct ramfs::node *node = (ramfs::node*)filedesc->data;
+			if (node == NULL) {
 				return false;
 			}
+
+			if (bufsize != node->size) {
+				unsigned char* tmpbuf = (unsigned char*)malloc(bufsize);
+				if (tmpbuf == NULL) {
+					return false;
+				}
+				free(node->data);
+				node->size = bufsize;
+				node->data = tmpbuf;
+			}
+			memcpy(node->data, buf, bufsize);
+
+			return true;
 		}
 
 		return false;
+	}
+
+	bool close(uint64_t fd) {
+		struct file_descriptor *desc = getfd(fd);
+		if (desc == NULL) {
+			return false;
+		}
+
+		if (fdroot == NULL) {
+			return false;
+		}
+
+		// FD before our FD, this is used to take the one being closed out of the linked list
+		struct file_descriptor *targetdesc = fdroot;
+
+		if (fdroot != desc) {
+			while (targetdesc->next != desc) {
+				targetdesc = targetdesc->next;
+			}
+		}
+
+		targetdesc->next = desc->next;
+
+		free(desc);
+
+		return true;
 	}
 }
