@@ -53,28 +53,10 @@ override CFLAGS += \
 
 # Security related flags
 override CFLAGS += \
-	-fstack-protector-all \
-	-fsanitize=undefined \
-	-fsanitize-minimal-runtime \
-	-fsanitize=bounds \
-	-fsanitize=object-size \
-	-fsanitize=alignment \
-	-fsanitize=bool \
-	-fsanitize=enum \
-	-fsanitize=shift \
-	-fsanitize=shift-base \
-	-fsanitize=shift-exponent \
-	-fsanitize=integer-divide-by-zero \
-	-fsanitize=unreachable \
-	-fsanitize=return \
-	-fsanitize=nonnull-attribute \
-	-fsanitize=null \
-	-fsanitize=implicit-integer-truncation \
-	-fsanitize=implicit-integer-sign-change \
-	-fsanitize=cfi
+	-fstack-protector-all
 
 CPFLAGS = $(CFLAGS) \
-	-std=c++23 -fno-exceptions -fno-rtti
+	-std=c++03 -fno-exceptions -fno-rtti
 
 override CPPFLAGS := \
 	-I$(SRC_DIR)/inc \

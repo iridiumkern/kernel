@@ -50,6 +50,14 @@ namespace {
 		P.S. please dont touch this code unless you are willing to fight god, I have spent a lot of time messing with this already and fought so many senseless bugs lol. The node shit in the RAMFS is weird as hell ngl.
 		But eventually all will be abstracted into my own version of fs_ops.
 		-- 2026-10-20 APixelDev
+
+		Update on the UID 1 explanation and PID0 seeming similar to a "microkernel" like design.
+
+		This kernel is by no means a microkernel. First of all it throws pretty much everything into the kernel, the only thing you could even say is microkernel-like is the UID 1 self insert into the userland
+		However I see it more as a tool that is above "root" not much a backdoor but more of a way to protect secrets using an API that cannot be attacked (at least in theory)
+		Though this is mostly design thats in my head, I just decided to write it down.
+
+		-- 2026-11-08 APixelDev
 		*/
 
 		/**
@@ -589,6 +597,18 @@ namespace vfs {
 			return false; // Cannot read from STDOUT
 		}
 
+		if (!security::memory::range_is_user((uintptr_t)buf, bufsize)) {
+			return false;
+		}
+
+		if (!security::memory::range_is_mapped((uintptr_t)buf, bufsize)) {
+			return false;
+		}
+
+		if (!security::memory::range_is_write((uintptr_t)buf, bufsize)) {
+			return false;
+		}
+
 		struct mounted_fs *targetfs = rootfs;
 
 		file_descriptor *filedesc = getfd(fd);
@@ -639,6 +659,14 @@ namespace vfs {
 	}
 
 	bool write(uint64_t fd, void* buf, size_t bufsize, bool user) {
+		if (!security::memory::range_is_user((uintptr_t)buf, bufsize)) {
+			return false;
+		}
+
+		if (!security::memory::range_is_mapped((uintptr_t)buf, bufsize)) {
+			return false;
+		}
+
 		// Print to STDOUT
 		if (fd == 0) {
 			if (range_is_mapped((uintptr_t)buf, bufsize)) {
@@ -705,6 +733,15 @@ namespace vfs {
 	bool close(uint64_t fd) {
 		struct file_descriptor *desc = getfd(fd);
 		if (desc == NULL) {
+			return false;
+		}
+
+		thread_t *thread = get_current_thread();
+		if (thread == NULL) {
+			return false;
+		}
+
+		if (desc->owner_pid != thread->owner->pid || desc->data == NULL) {
 			return false;
 		}
 

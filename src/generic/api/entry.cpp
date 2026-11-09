@@ -31,20 +31,34 @@ static inline void usermemorylock(void) {
 	#endif
 }
 
-extern "C" bool apisyscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t arg6) {
-	bool ret = false;
+extern "C" uint64_t apisyscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t arg6) {
+	uint64_t ret = 0;
 	(void)arg6;
 	// I/O
 	if (arg1 == 0) {
 		if (arg2 == 0) {
-			// Write to VFS
-			// Arg3 is FD
-			// Arg4 is buffer pointer
-			// Arg5 is size
-			// User is set to true to make sure its safe
+			// Arg3 is the string to open
+			// Arg4 is the Filesystem ID
+			usermemoryacc();
+			ret = vfs::open(&ret, (const char*)arg3, arg4);
+			usermemorylock();
+		} else if (arg2 == 1) {
+			// Arg3 is the file descriptor
+			// Arg4 is the buffer
+			// Arg5 is the buffer length
+			usermemoryacc();
+			ret = vfs::read(arg3, (void*)arg4, arg5);
+			usermemorylock();
+		} else if (arg2 == 2) {
+			// Arg3 is the file descriptor
+			// Arg4 is the buffer
+			// Arg5 is the buffer length
 			usermemoryacc();
 			ret = vfs::write(arg3, (void*)arg4, arg5, true);
-			usermemorylock();
+			usermemorylock();	
+		} else if (arg2 == 3) {
+			// Closes a file descriptor
+			ret = vfs::close(arg3);
 		}
 	}
 

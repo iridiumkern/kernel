@@ -5,7 +5,7 @@
 extern uint64_t syscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t arg6);
 
 void puts(const char* str) {
-	syscall(0, 0, 0, (uint64_t)str, (uint64_t)strlen(str), 0);
+	syscall(0, 2, 0, (uint64_t)str, (uint64_t)strlen(str), 0);
 }
 
 __attribute__((noreturn)) void _start(void) {
