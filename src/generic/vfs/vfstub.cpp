@@ -97,48 +97,6 @@ namespace {
 		bool init = false;
 
 		/**
-		 * @brief Gets the root node of the RAMFS
-		 * 
-		 * @return struct node* The RAMFS root node.
-		 */
-		struct node* getrootnode(void) {
-			if (!init) return NULL;
-
-			return rootnode;
-		}
-
-		/**
-		 * @brief Sets up the RAMFS
-		 * 
-		 * @return true Init worked
-		 * @return false Init failed
-		 */
-		bool ramfs_init(void) {
-			if (init || rootnode != NULL) return false;
-
-			struct node* newroot = (struct node*)malloc(sizeof(struct node));
-			if (newroot == NULL) {
-				return false;
-			}
-
-			memset(newroot, 0, sizeof(struct node));
-
-			newroot->namesize = 0;
-			newroot->ignorename = true;
-			newroot->is_folder = true; // Root node aka the root directory is a folder
-			newroot->data = NULL;
-			newroot->size = 0;
-
-			newroot->parentnode = NULL;
-			newroot->childnoderoot = NULL;
-			newroot->nextnode = NULL;
-
-			rootnode = newroot;
-			init = true;
-			return true;
-		}
-
-		/**
 		 * @brief Create a node object
 		 * 
 		 * @param parent The parent node, can ONLY be a folder.
@@ -419,27 +377,128 @@ namespace {
 
 			return current;
 		}
+
+		vfs::open_file_t* open(const char* path) {
+			struct node* node = backtrack_from_path(path);
+
+			if (node == NULL) {
+				return NULL;
+			}
+
+			vfs::open_file_t *file = (vfs::open_file_t*)malloc(sizeof(vfs::open_file_t));
+			
+			if (file == NULL) {
+				return NULL;
+			}
+
+			file->priv = node;
+
+			return file;
+		}
+
+		bool read(vfs::open_file_t* filedata, void* buffer, size_t size) {
+			if (filedata == NULL || buffer == NULL || size == 0) {
+				return false;
+			}
+
+			struct node* node = (struct node*)filedata->priv;
+
+			if (node == NULL) {
+				return false;
+			}
+
+			return false;
+		}
+
+		bool write(vfs::open_file_t* filedata, const void* buffer, size_t size) {
+			(void)filedata;
+			(void)buffer;
+			(void)size;
+
+			return false;
+		}
+
+		bool makefile(const char* path) {
+			(void)path;
+			// Stub call, does nothing for now :)
+			create_node(NULL, NULL, 0, false);
+			return false;
+		}
+
+		bool makefolder(const char* path) {
+			(void)path;
+			return false;
+		}
+		
+		bool destroyfile(const char* path) {
+			struct node* node = backtrack_from_path(path);
+			if (node == NULL) return false;
+
+			return destroy_node(node);
+		}
+		
+		bool destroyfolder(const char* path) {
+			struct node* node = backtrack_from_path(path);
+			if (node == NULL) return false;
+			
+			return destroy_node(node);
+		}
+
+		bool close(vfs::open_file_t *filedata) {
+			// Does nothing other than frees filedata
+			free(filedata);			
+			return true;
+		}
+
+		vfs::fs_ops ops = {
+			.open = open,
+			.read = read,
+			.write = write,
+			.close = close,
+			.makefile = makefile,
+			.makefolder = makefolder,
+			.destroyfile = destroyfile,
+			.destroyfolder = destroyfolder,
+		};
+
+		/**
+		 * @brief Sets up the RAMFS
+		 * 
+		 * @return true Init worked
+		 * @return false Init failed
+		 */
+		bool ramfs_init(void) {
+			if (init || rootnode != NULL) return false;
+
+			struct node* newroot = (struct node*)malloc(sizeof(struct node));
+			if (newroot == NULL) {
+				return false;
+			}
+
+			memset(newroot, 0, sizeof(struct node));
+
+			newroot->namesize = 0;
+			newroot->ignorename = true;
+			newroot->is_folder = true; // Root node aka the root directory is a folder
+			newroot->data = NULL;
+			newroot->size = 0;
+
+			newroot->parentnode = NULL;
+			newroot->childnoderoot = NULL;
+			newroot->nextnode = NULL;
+
+			rootnode = newroot;
+
+			// Register the RAMFS with the VFS.
+			uint64_t trash = 0;
+			vfs::registerfs(&trash, &ops);
+			init = true;
+			return true;
+		}
 	}
 }
 
 namespace vfs {
-	// Will be expanded
-	struct mounted_fs {
-		uint64_t id;
-		bool isramfs;
-		mounted_fs* next;
-	};
-
-	struct file_descriptor {
-		uint64_t fd;
-		uint64_t owner_pid;
-		void* data; // Depends on filesystem, for the RAMFS its just a node*
-		uint8_t flags; // 255 possible flags, none exist yet, all files are R/W
-
-		uint64_t fsid;
-		struct file_descriptor *next;
-	};
-
 	struct mounted_fs *rootfs = NULL;
 	struct file_descriptor *fdroot = NULL;
 
@@ -450,6 +509,7 @@ namespace vfs {
 		return nextfd++;
 	}
 
+	// Get ID for a VFS.
 	uint64_t getid(void) {
 		uint64_t ret = nextid;
 		nextid++;
@@ -469,6 +529,20 @@ namespace vfs {
 		return NULL;
 	}
 
+	static mounted_fs* findtargetfs(uint64_t fsid) {
+		mounted_fs *targetfs = rootfs;
+	
+		while (targetfs != NULL) {
+			if (targetfs->id == fsid) {
+				return targetfs;
+			}
+		
+			targetfs = targetfs->next;
+		}
+	
+		return NULL;
+	}
+
 	bool vfs_init(void) {
 		// Setup mounted_fs, points to RAMFS (toggles isramfs)
 		rootfs = (mounted_fs*)malloc(sizeof(mounted_fs));
@@ -482,114 +556,60 @@ namespace vfs {
 		// Sets up the RAMFS.
 		if (!ramfs::ramfs_init()) return false;
 
-		struct ramfs::node* rootnode = ramfs::getrootnode();
-		if (rootnode == NULL) {
-			kpanic("FAILED TO GET RAMFS ROOT NODE!");
-			return false;
-		}
-
-		// Create a folder in the root.
-		// Used for kernel logs and other info.
-		struct ramfs::node *kernelinfo = ramfs::create_node(rootnode, "kernelinfo", 10, true);
-		if (kernelinfo == NULL) {
-			kpanic("FAILED TO CREATE KERNELINFO!");
-			return false;
-		}
-
-		kernelinfo->info.uid = 1;
-
-		// Sanity test.
-		if (ramfs::backtrack_from_path("kernelinfo") != kernelinfo) {
-			kpanic("RAMFS BACKTRACK CODE FAILED!");
-			return false;
-		}
-
-		// Create a small log file!
-		struct ramfs::node *testlog = ramfs::create_node(kernelinfo, "test.log", 8, false);
-		if (testlog == NULL) {
-			kpanic("FAILED TO MAKE TESTLOG!");
-			return false;
-		}
-
-		const char *teststr = "Test Log!\n";
-		size_t teststrlen = strlen(teststr);
-
-		uint8_t *data = (uint8_t*)malloc(teststrlen);
-		if (data == NULL) {
-			kpanic("FAILED TO ALLOCATE TESTLOG DATA!");
-			return false;
-		}
-
-		memcpy(data, teststr, teststrlen);
-		testlog->data = data;
-		testlog->size = teststrlen;
-
-		// Backtrack to find it and print out its log data
-		struct ramfs::node *log = ramfs::backtrack_from_path("kernelinfo/test.log");
-		if (log == NULL || log != testlog) {
-			kpanic("Backtrack code failed when grabbing test log!");
-			return false;
-		}
-
-		debug::hexdump(log->data, log->size);
-
-		if (!ramfs::destroy_node(log)) {
-			kpanic("Failed to destroy RamFS node.");
-		}
-
 		return true;
 	}
 
-	bool open(uint64_t *fdret, const char* path, uint64_t fsid) {
-		if (fdret == NULL || path == NULL)
-			return false;
+	bool open(uint64_t *fdret, const char *path, uint64_t fsid) {
+	    if (fdret == NULL || path == NULL)
+	        return false;
 
-		if (!range_is_mapped((uintptr_t)fdret, sizeof(*fdret)))
-			return false;
+	    if (!range_is_mapped((uintptr_t)fdret, sizeof(*fdret)))
+	        return false;
 
-		// Find the requested filesystem.
-		struct mounted_fs *targetfs = rootfs;
+	    mounted_fs *fs = findtargetfs(fsid);
 
-		while (targetfs != NULL && targetfs->id != fsid)
-			targetfs = targetfs->next;
+	    if (fs == NULL)
+	        return false;
 
-		if (targetfs == NULL)
-			return false;
+	    if (fs->ops == NULL || fs->ops->open == NULL)
+	        return false;
 
-		// Resolve the path.
-		if (targetfs->isramfs) {
-			struct ramfs::node *targetnode = ramfs::backtrack_from_path(path);
-			thread_t *thread = get_current_thread();
-			if (thread == NULL) {
-				return false;
-			}
+	    thread_t *thread = get_current_thread();
 
-			if (targetnode == NULL)
-				return false;
+	    if (thread == NULL || thread->owner == NULL)
+	        return false;
 
-			// Allocate a file descriptor.
-			struct file_descriptor *newfd = (struct file_descriptor*)malloc(sizeof(struct file_descriptor));
+	    open_file_t *file = fs->ops->open(path);
 
-			if (newfd == NULL)
-				return false;
+	    if (file == NULL)
+	        return false;
 
-			memset(newfd, 0, sizeof(struct file_descriptor));
+	    struct file_descriptor *fd = (struct file_descriptor*)malloc(sizeof(*fd));
 
-			newfd->fd = getfd();
-			newfd->data = targetnode;
-			newfd->owner_pid = thread->owner->pid;
-			newfd->flags = 0;
+	    if (fd == NULL) {
+	        return false;
+	    }
 
-			// Insert into the global descriptor list.
-			newfd->next = fdroot;
-			newfd->fsid = targetfs->id;
-			fdroot = newfd;
+	    fd->fd = getfd();
+	    fd->flags = 0;
+	    fd->file = file;
+	    fd->fsid = fsid;
+	    fd->owner_pid = thread->owner->pid;
+	    fd->next = NULL;
 
-			*fdret = newfd->fd;
-			return true;
-		}
+	    struct file_descriptor *targetfd = fdroot;
 
-		return false;
+	    if (targetfd == NULL) {
+	        fdroot = fd;
+	    } else {
+	        while (targetfd->next != NULL)
+	            targetfd = targetfd->next;
+
+	        targetfd->next = fd;
+	    }
+
+	    *fdret = fd->fd;
+	    return true;
 	}
 
 	bool read(uint64_t fd, void* buf, size_t bufsize) {
@@ -629,33 +649,9 @@ namespace vfs {
 			return false;
 		}
 
-		if (targetfs->isramfs) {
-			if (filedesc->owner_pid != thread->owner->pid || filedesc->data == NULL || !range_is_mapped((uintptr_t)buf, bufsize)) {
-				return false;
-			}
+		struct mounted_fs *fs = findtargetfs(filedesc->fsid);
 
-			struct ramfs::node *node = (ramfs::node*)filedesc->data;
-			if (node == NULL) {
-				return false;
-			}
-
-			if (!security::memory::range_is_mapped((uintptr_t)node->data, node->size)) {
-				return false;
-			}
-
-			if (!security::memory::range_is_write((uintptr_t)node->data, node->size)) {
-				return false;
-			}
-
-			if (bufsize < node->size) {
-				return false;
-			}
-
-			// Copy into RW buffer.
-			memcpy(buf, node->data, bufsize);
-		}
-
-		return true;
+		return fs->ops->read(filedesc->file, buf, bufsize);
 	}
 
 	bool write(uint64_t fd, void* buf, size_t bufsize, bool user) {
@@ -682,7 +678,7 @@ namespace vfs {
 				return true;
 			}
 		}
-
+		
 		struct mounted_fs *targetfs = rootfs;
 
 		file_descriptor *filedesc = getfd(fd);
@@ -703,31 +699,9 @@ namespace vfs {
 			return false;
 		}
 
-		if (targetfs->isramfs == true) {
-			if (filedesc->owner_pid != thread->owner->pid || filedesc->data == NULL || !range_is_mapped((uintptr_t)buf, bufsize)) {
-				return false;
-			}
+		struct mounted_fs *fs = findtargetfs(filedesc->fsid);
 
-			struct ramfs::node *node = (ramfs::node*)filedesc->data;
-			if (node == NULL) {
-				return false;
-			}
-
-			if (bufsize != node->size) {
-				unsigned char* tmpbuf = (unsigned char*)malloc(bufsize);
-				if (tmpbuf == NULL) {
-					return false;
-				}
-				free(node->data);
-				node->size = bufsize;
-				node->data = tmpbuf;
-			}
-			memcpy(node->data, buf, bufsize);
-
-			return true;
-		}
-
-		return false;
+		return fs->ops->write(filedesc->file, buf, bufsize);
 	}
 
 	bool close(uint64_t fd) {
@@ -736,12 +710,13 @@ namespace vfs {
 			return false;
 		}
 
+		// Check that the person has authority to close the file.
 		thread_t *thread = get_current_thread();
 		if (thread == NULL) {
 			return false;
 		}
 
-		if (desc->owner_pid != thread->owner->pid || desc->data == NULL) {
+		if (desc->owner_pid != thread->owner->pid) {
 			return false;
 		}
 
@@ -761,6 +736,47 @@ namespace vfs {
 		targetdesc->next = desc->next;
 
 		free(desc);
+
+		// Remove from the actual filesystem
+		struct mounted_fs *fs = findtargetfs(desc->fsid);
+
+		if (fs == NULL) {
+			return false;
+		}
+
+		return fs->ops->close(desc->file);
+	}
+
+	bool registerfs(uint64_t *fsid, fs_ops *ops) {
+		if (ops == NULL || fsid == NULL) {
+			return false;
+		}
+
+		uint64_t newfsid = getid();
+		memcpy(fsid, &newfsid, sizeof(uint64_t));
+		struct mounted_fs *mountfs = (struct mounted_fs*)malloc(sizeof(struct mounted_fs));
+
+		if (mountfs == NULL) {
+			return false;
+		}
+
+		mountfs->id = newfsid;
+		mountfs->next = NULL;
+		mountfs->ops = ops;
+
+		// Registers the first FS
+		if (rootfs == NULL) {
+			rootfs = mountfs;
+			return true;
+		}
+
+		struct mounted_fs *targetfs = rootfs;
+
+		while (targetfs->next != NULL) {
+			targetfs = targetfs->next;
+		}
+
+		targetfs->next = mountfs;
 
 		return true;
 	}

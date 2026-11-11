@@ -4,6 +4,49 @@
 #include <stddef.h>
 
 namespace vfs {
+	// Holds some basic info such as UID/owner
+	// Also holds a pointer to private data for the filesystem layer to hold FS specific data in
+	typedef struct open_file_t {
+		void* priv;
+		uint64_t uid;
+	}open_file_t;
+
+	struct file_descriptor {
+		uint64_t fd;
+		uint64_t owner_pid;
+		uint8_t flags; // 255 possible flags, none exist yet, all files are R/W
+
+		uint64_t fsid;
+		open_file_t *file;
+
+		struct file_descriptor *next;
+	};
+
+	typedef struct fs_ops {
+	    // File operations
+
+		// Returns pointer to data based on its path
+		open_file_t* (*open)(const char* path);
+	    bool (*read)(open_file_t* filedata, void* buffer, size_t size);
+	    bool (*write)(open_file_t* filedata, const void* buffer, size_t size);
+		bool (*close)(open_file_t* filedata);
+
+	    // Creation
+	    bool (*makefile)(const char* path);
+	    bool (*makefolder)(const char* path);
+
+	    // Destruction
+	    bool (*destroyfile)(const char* path);
+	    bool (*destroyfolder)(const char* path);
+	} fs_ops;
+
+	struct mounted_fs {
+		uint64_t id;
+		bool isramfs;
+		fs_ops *ops;
+		mounted_fs* next;
+	};
+
 	/**
 	 * @brief Sets up the VFS
 	 * 
@@ -54,4 +97,14 @@ namespace vfs {
 	 * @return false The file was not closed
 	 */
 	bool close(uint64_t fd);
+
+	/**
+	 * @brief Registers a FS in the VFS
+	 * 
+	 * @param fsid Filesystem ID.
+	 * @param ops Filesystem ops
+	 * @return true It mounted
+	 * @return false It did not mo
+	 */
+	bool registerfs(uint64_t *fsid, fs_ops *ops);
 }
