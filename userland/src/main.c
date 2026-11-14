@@ -4,8 +4,21 @@
 // This is expected to be provided by every architectures libc impl
 extern uint64_t syscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t arg6);
 
+void putchar(const char c) {
+	syscall(0, 2, 0, (uint64_t)&c, 1, 0);
+}
+
 void puts(const char* str) {
 	syscall(0, 2, 0, (uint64_t)str, (uint64_t)strlen(str), 0);
+}
+
+char getchar(void) {
+	char c = '\0';
+	while (c == '\0') {
+		c = syscall(1, 0, 0, 0, 0, 0);
+	}
+
+	return c;
 }
 
 __attribute__((noreturn)) void _start(void) {
@@ -44,6 +57,10 @@ __attribute__((noreturn)) void _start(void) {
 
 	// Close the file
 	syscall(0, 3, fd, 0, 0, 0);
+
+	while(1) {
+		putchar(getchar());
+	}
 
 	for (;;)
 		__asm__ volatile ("pause");
