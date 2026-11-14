@@ -9,7 +9,6 @@ namespace vfs {
 	typedef struct open_file_t {
 		void* priv;
 		uint64_t uid;
-		uint64_t offset;
 	} open_file_t;
 
 	struct file_descriptor {
@@ -25,8 +24,8 @@ namespace vfs {
 
 	typedef struct fs_ops {
 		open_file_t* (*open)(const char* path);
-		bool (*read)(open_file_t* filedata, void* buffer, size_t size, size_t* transferred);
-		bool (*write)(open_file_t* filedata, const void* buffer, size_t size, size_t* transferred);
+		bool (*read)(open_file_t* filedata, void* buffer, size_t size);
+		bool (*write)(open_file_t* filedata, const void* buffer, size_t size);
 		bool (*close)(open_file_t* filedata);
 
 		bool (*makefile)(const char* path);
@@ -48,11 +47,8 @@ namespace vfs {
 	// Opens a path on the filesystem identified by fsid.
 	bool open(uint64_t* fdret, const char* path, uint64_t fsid);
 
-	// Reads/writes sequentially from the descriptor's current offset.
-	// transferred receives the actual byte count (including short reads at EOF).
-	bool read(uint64_t fd, void* buf, size_t bufsize, size_t* transferred = NULL);
-	bool write(uint64_t fd, void* buf, size_t bufsize, bool user,
-		size_t* transferred = NULL);
+	bool read(uint64_t fd, void* buf, size_t bufsize);
+	bool write(uint64_t fd, void* buf, size_t bufsize, bool user);
 
 	bool close(uint64_t fd);
 

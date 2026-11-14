@@ -35,6 +35,10 @@ __attribute__((noreturn)) void _start(void) {
 	// Read the file into the buffer
 	syscall(0, 1, fd, (uint64_t)buf, 512, 0);
 
+	if (buf[0] == '\0') {
+		puts("BUF filled with nothing, file read or write must have failed!\n");
+	}
+
 	// Print out the buffer
 	puts(buf);
 

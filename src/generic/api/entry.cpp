@@ -1,3 +1,4 @@
+#include <abstractions.hpp>
 #include <sec/memory.hpp>
 #include <sec/random.hpp>
 #include <scheduler.hpp>
@@ -34,13 +35,18 @@ static inline void usermemorylock(void) {
 extern "C" uint64_t apisyscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t arg6) {
 	uint64_t ret = 0;
 	(void)arg6;
-	// I/O
+	// VFS stuff
 	if (arg1 == 0) {
 		if (arg2 == 0) {
 			// Arg3 is the string to open
 			// Arg4 is the Filesystem ID
 			usermemoryacc();
-			ret = vfs::open(&ret, (const char*)arg3, arg4);
+			uint64_t fd = 0;
+					
+			if (vfs::open(&fd, (const char*)arg3, arg4))
+				ret = fd;
+			else
+				ret = 0;
 			usermemorylock();
 		} else if (arg2 == 1) {
 			// Arg3 is the file descriptor
@@ -59,6 +65,12 @@ extern "C" uint64_t apisyscall(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint
 		} else if (arg2 == 3) {
 			// Closes a file descriptor
 			ret = vfs::close(arg3);
+		}
+	} else if (arg1 == 1) {
+		// Input/Output
+		if (arg2 == 0) {
+			// Fetch keyboard input, non blocking, returns \0 if no key is inputted.
+			return arch_abstractors::getchar();
 		}
 	}
 

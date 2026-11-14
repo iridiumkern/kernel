@@ -2,8 +2,6 @@
  * @file vfstub.cpp
  * @brief Virtual filesystem layer and built-in RAMFS.
  *
- * The VFS owns descriptor objects and open_file_t objects. Filesystem drivers
- * own the contents of open_file_t::priv and implement the callbacks in fs_ops.
  */
 
 #include <sec/memory.hpp>
@@ -241,6 +239,9 @@ namespace {
 			return current;
 		}
 
+		// Ops-table callbacks begin here. The node representation and path
+		// traversal helpers above are intentionally left as-is.
+
 		vfs::open_file_t* open(const char* path) {
 			struct node* target = backtrack_from_path(path);
 			if (target == NULL || target->is_folder)
@@ -253,13 +254,10 @@ namespace {
 
 			state->priv = target;
 			state->uid = target->info.uid;
-			state->offset = 0;
 			return state;
 		}
 
-		bool read(vfs::open_file_t* filedata, void* buffer, size_t size, size_t* transferred) {
-			if (transferred != NULL)
-				*transferred = 0;
+		bool read(vfs::open_file_t* filedata, void* buffer, size_t size) {
 			if (filedata == NULL || filedata->priv == NULL)
 				return false;
 			if (size == 0)
@@ -268,61 +266,38 @@ namespace {
 				return false;
 
 			struct node* target = (struct node*)filedata->priv;
-			if (target->is_folder || filedata->offset > target->size)
+			if (target->is_folder || target->size < size)
+				return false;
+			if (target->size != 0 && target->data == NULL)
 				return false;
 
-			size_t remaining = target->size - (size_t)filedata->offset;
-			size_t amount = size < remaining ? size : remaining;
-			if (amount != 0) {
-				if (target->data == NULL)
-					return false;
-				memcpy(buffer, target->data + (size_t)filedata->offset, amount);
-				filedata->offset += amount;
-			}
-			if (transferred != NULL)
-				*transferred = amount;
+			memcpy(buffer, target->data, size);
 			return true;
 		}
 
-		bool write(vfs::open_file_t* filedata, const void* buffer, size_t size, size_t* transferred) {
-			if (transferred != NULL)
-				*transferred = 0;
+		bool write(vfs::open_file_t* filedata, const void* buffer, size_t size) {
 			if (filedata == NULL || filedata->priv == NULL)
 				return false;
-			if (size == 0)
-				return true;
-			if (buffer == NULL || !range_is_mapped((uintptr_t)buffer, size))
+			if (size != 0 &&
+				(buffer == NULL || !range_is_mapped((uintptr_t)buffer, size)))
 				return false;
 
 			struct node* target = (struct node*)filedata->priv;
-			if (target->is_folder || filedata->offset > (uint64_t)(size_t)-1)
+			if (target->is_folder)
 				return false;
 
-			size_t offset = (size_t)filedata->offset;
-			if (size > (size_t)-1 - offset)
-				return false;
-			size_t end = offset + size;
-
-			if (end > target->size) {
-				unsigned char* replacement = (unsigned char*)malloc(end);
+			unsigned char* replacement = NULL;
+			if (size != 0) {
+				replacement = (unsigned char*)malloc(size);
 				if (replacement == NULL)
 					return false;
-
-				if (target->size != 0 && target->data != NULL)
-					memcpy(replacement, target->data, target->size);
-				if (offset > target->size)
-					memset(replacement + target->size, 0,
-						offset - target->size);
-
-				free(target->data);
-				target->data = replacement;
-				target->size = end;
+				memcpy(replacement, buffer, size);
 			}
 
-			memcpy(target->data + offset, buffer, size);
-			filedata->offset = end;
-			if (transferred != NULL)
-				*transferred = size;
+			if (target->data != NULL)
+				free(target->data);
+			target->data = replacement;
+			target->size = size;
 			return true;
 		}
 
@@ -332,13 +307,16 @@ namespace {
 
 			size_t length = 0;
 			while (length < 4096 &&
-				range_is_mapped((uintptr_t)path + length, 1) && path[length] != '\0') ++length;
+				range_is_mapped((uintptr_t)path + length, 1) &&
+				path[length] != '\0')
+				++length;
 			if (length == 0 || length == 4096 ||
 				!range_is_mapped((uintptr_t)path + length, 1))
 				return false;
 
 			size_t base = length;
-			while (base > 0 && path[base - 1] != '/') --base;
+			while (base > 0 && path[base - 1] != '/')
+				--base;
 			const char* name = path + base;
 			size_t name_length = length - base;
 			if (name_length == 0 || name_length >= 512)
@@ -374,7 +352,8 @@ namespace {
 				return false;
 
 			size_t base = length;
-			while (base > 0 && path[base - 1] != '/') --base;
+			while (base > 0 && path[base - 1] != '/')
+				--base;
 			const char* name = path + base;
 			size_t name_length = length - base;
 			if (name_length == 0 || name_length >= 512)
@@ -405,7 +384,8 @@ namespace {
 
 		bool destroyfolder(const char* path) {
 			struct node* target = backtrack_from_path(path);
-			if (target == NULL || !target->is_folder || target == rootnode || target->childnoderoot != NULL)
+			if (target == NULL || !target->is_folder ||
+				target == rootnode || target->childnoderoot != NULL)
 				return false;
 			return destroy_node(target);
 		}
@@ -450,7 +430,8 @@ namespace {
 				return false;
 			}
 
-			struct node* kernelinfo = create_node(rootnode, "kernelinfo", 10, true);
+			struct node* kernelinfo =
+				create_node(rootnode, "kernelinfo", 10, true);
 			if (kernelinfo == NULL)
 				kpanic("FAILED TO CREATE KERNELINFO!");
 			kernelinfo->info.uid = 1;
@@ -458,7 +439,8 @@ namespace {
 			if (backtrack_from_path("kernelinfo") != kernelinfo)
 				kpanic("RAMFS BACKTRACK CODE FAILED!");
 
-			struct node* testlog = create_node(kernelinfo, "test.log", 8, false);
+			struct node* testlog =
+				create_node(kernelinfo, "test.log", 8, false);
 			if (testlog == NULL)
 				kpanic("FAILED TO MAKE TESTLOG!");
 
@@ -517,7 +499,8 @@ namespace vfs {
 
 		bool descriptor_owned_by_current(const file_descriptor* desc) {
 			thread_t* thread = current_thread();
-			return desc != NULL && thread != NULL && desc->owner_pid == thread->owner->pid;
+			return desc != NULL && thread != NULL &&
+				desc->owner_pid == thread->owner->pid;
 		}
 
 		bool valid_user_buffer(const void* buffer, size_t size, bool writable) {
@@ -529,7 +512,8 @@ namespace vfs {
 			uintptr_t address = (uintptr_t)buffer;
 			if (size > (size_t)-1 - address)
 				return false;
-			if (!range_is_user(address, size) || !range_is_mapped(address, size))
+			if (!range_is_user(address, size) ||
+				!range_is_mapped(address, size))
 				return false;
 			return !writable || range_is_write(address, size);
 		}
@@ -607,9 +591,7 @@ namespace vfs {
 		return true;
 	}
 
-	bool read(uint64_t fd, void* buf, size_t bufsize, size_t* transferred) {
-		if (transferred != NULL)
-			*transferred = 0;
+	bool read(uint64_t fd, void* buf, size_t bufsize) {
 		if (!initialized || fd == 0)
 			return false;
 		if (!valid_user_buffer(buf, bufsize, true))
@@ -622,12 +604,10 @@ namespace vfs {
 		mounted_fs* fs = find_filesystem(desc->fsid);
 		if (fs == NULL || fs->ops == NULL || fs->ops->read == NULL)
 			return false;
-		return fs->ops->read(desc->file, buf, bufsize, transferred);
+		return fs->ops->read(desc->file, buf, bufsize);
 	}
 
-	bool write(uint64_t fd, void* buf, size_t bufsize, bool user, size_t* transferred) {
-		if (transferred != NULL)
-			*transferred = 0;
+	bool write(uint64_t fd, void* buf, size_t bufsize, bool user) {
 		if (!initialized)
 			return false;
 
@@ -637,8 +617,6 @@ namespace vfs {
 			const char* output = (const char*)buf;
 			for (size_t i = 0; i < bufsize; ++i)
 				putchar_ft(output[i]);
-			if (transferred != NULL)
-				*transferred = bufsize;
 			return true;
 		}
 
@@ -652,7 +630,7 @@ namespace vfs {
 		mounted_fs* fs = find_filesystem(desc->fsid);
 		if (fs == NULL || fs->ops == NULL || fs->ops->write == NULL)
 			return false;
-		return fs->ops->write(desc->file, buf, bufsize, transferred);
+		return fs->ops->write(desc->file, buf, bufsize);
 	}
 
 	bool close(uint64_t fd) {
@@ -683,14 +661,16 @@ namespace vfs {
 	}
 
 	bool registerfs(uint64_t* fsid, fs_ops* ops) {
-		if (fsid == NULL || ops == NULL || ops->open == NULL || ops->read == NULL || ops->write == NULL || ops->close == NULL)
+		if (fsid == NULL || ops == NULL || ops->open == NULL ||
+			ops->read == NULL || ops->write == NULL || ops->close == NULL)
 			return false;
 		if (!range_is_mapped((uintptr_t)fsid, sizeof(*fsid)))
 			return false;
 		if (next_filesystem_id == UINT64_MAX)
 			return false;
 
-		mounted_fs* mount = (mounted_fs*)malloc(sizeof(mounted_fs));
+		mounted_fs* mount =
+			(mounted_fs*)malloc(sizeof(mounted_fs));
 		if (mount == NULL)
 			return false;
 

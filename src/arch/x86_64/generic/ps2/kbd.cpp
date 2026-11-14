@@ -93,6 +93,8 @@ static char decode_scancode(uint8_t scancode) {
 	}
 }
 
+static char lastchar = '\0';
+
 extern "C" void ps2_kbd_drv(void) {
 	uint8_t scancode = inb(0x60);
 
@@ -120,7 +122,13 @@ extern "C" void ps2_kbd_drv(void) {
 	}
 
 	char c = decode_scancode(scancode);
-	if (c) putchar_ft(c);
+	lastchar = c;
 
 	lapic_eoi();
+}
+
+extern "C" char ps2_get_keyboard_character(void) {
+	char ret = lastchar;
+	lastchar = '\0';
+	return ret;
 }
