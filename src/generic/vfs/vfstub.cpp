@@ -1,7 +1,12 @@
 /**
  * @file vfstub.cpp
- * @brief Virtual filesystem layer and built-in RAMFS.
- *
+ * @author APixelDev (security@stackunderflow.org)
+ * @brief Virtual filesystem layer and built-in RAMFS. 
+ * @version 0.1
+ * @date 2026-11-14
+ * 
+ * @copyright Copyright (c) 2026
+ * 
  */
 
 #include <sec/memory.hpp>
